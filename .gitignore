@@ -1,0 +1,7 @@
+node_modules/
+.vercel/
+.env
+.env.*
+_step*_check.bat
+_step*_log.txt
+_push_log.txt

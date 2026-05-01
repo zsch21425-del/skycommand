@@ -1,0 +1,14 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "crons": [
+    {
+      "path": "/api/price-alert",
+      "schedule": "*/15 13-20 * * 1-5"
+    }
+  ],
+  "functions": {
+    "api/price-alert.js": { "maxDuration": 30 },
+    "api/reset-baselines.js": { "maxDuration": 10 },
+    "api/status.js": { "maxDuration": 5 }
+  }
+}

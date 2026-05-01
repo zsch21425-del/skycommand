@@ -1,0 +1,2290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>SkyCommand · N-529TF</title>
+<link href="https://fonts.googleapis.com/css2?family=B612+Mono:wght@400;700&family=B612:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{width:100%;height:100%;overflow:hidden;background:#000;font-family:'B612',sans-serif}
+
+/* ── SKY: warm golden daytime ── */
+#skyBg{
+  position:fixed;inset:0;z-index:0;
+  background:
+    radial-gradient(circle 38px at 65% 46%,rgba(255,255,235,1) 0%,transparent 100%),
+    radial-gradient(ellipse 160px 100px at 65% 47%,rgba(255,235,160,.72) 0%,transparent 100%),
+    radial-gradient(ellipse 480px 220px at 65% 50%,rgba(255,200,90,.35) 0%,transparent 100%),
+    radial-gradient(ellipse 110% 16% at 50% 62%,rgba(255,210,130,.22) 0%,transparent 100%),
+    linear-gradient(to bottom,
+      #0c1a30 0%,#18304e 8%,#243e60 16%,
+      #305278 24%,#3e6890 33%,#4e80a8 43%,
+      #6090bc 52%,#78a8cc 60%,
+      #96c0d8 66%,#b4d0e4 70%,
+      #ccdcea 73%,#dce8f0 75%,
+      #e8e8d4 77%,#ddd0a0 79%,#c8b880 81%,
+      #2a2c18 84%,#1a1c0e 90%,#0e0e08 100%)
+}
+
+/* ── CANVASES ── */
+#cloudCanvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:1;pointer-events:none}
+#glCanvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:3;pointer-events:none}
+#hudCanvas{position:fixed;top:0;left:0;width:100%;pointer-events:none;z-index:6}
+
+/* ── WINDSHIELD GLASS STREAKS ── */
+#glassOv{
+  position:fixed;top:0;left:0;width:100%;z-index:4;pointer-events:none;
+  background:
+    linear-gradient(18deg,transparent 28%,rgba(255,255,255,.022) 38%,rgba(255,255,255,.032) 40%,rgba(255,255,255,.018) 42%,transparent 52%),
+    linear-gradient(-6deg,transparent 18%,rgba(255,255,255,.014) 30%,rgba(255,255,255,.02) 32%,transparent 44%)
+}
+
+/* ── TOP BAR ── */
+#topBar{
+  position:fixed;top:0;left:0;width:100%;height:24px;z-index:20;
+  display:flex;align-items:center;justify-content:space-between;padding:0 14px;
+  background:linear-gradient(to bottom,rgba(0,0,0,.55),transparent)
+}
+.t-reg{font-family:'B612 Mono',monospace;font-size:10px;font-weight:700;
+  color:rgba(215,195,145,.82);letter-spacing:.12em}
+.t-utc{font-family:'B612 Mono',monospace;font-size:10px;color:rgba(155,195,165,.68);letter-spacing:.05em}
+
+/* ── HUD TAPES ── */
+#hudTapes{position:fixed;left:0;width:100%;z-index:9;pointer-events:none}
+.tape-wrap{position:absolute;top:50%;transform:translateY(-50%)}
+.tape-wrap.spd{left:12px}.tape-wrap.alt{right:12px}
+.tape-body{width:60px;height:180px;
+  background:rgba(6,8,12,.38);border:1px solid rgba(80,100,90,.22);
+  backdrop-filter:blur(2px);position:relative;overflow:hidden}
+.tape-cur{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);
+  background:rgba(6,10,16,.72);border-top:1px solid rgba(0,180,130,.32);
+  border-bottom:1px solid rgba(0,180,130,.32);
+  padding:3px 0;text-align:center;
+  font-family:'B612 Mono',monospace;font-size:14px;color:#bcd8c8;letter-spacing:.04em}
+.tape-unit{position:absolute;bottom:-16px;width:100%;text-align:center;
+  font-family:'B612',sans-serif;font-size:7px;letter-spacing:.18em;
+  color:rgba(80,130,95,.4);text-transform:uppercase}
+#hdgTape{position:absolute;top:7px;left:50%;transform:translateX(-50%);
+  width:220px;height:26px;overflow:hidden;
+  background:rgba(6,8,12,.38);border:1px solid rgba(80,100,90,.22);
+  backdrop-filter:blur(2px)}
+#hdgBox{position:absolute;left:50%;transform:translateX(-50%);height:100%;
+  background:rgba(6,10,16,.72);border-left:1px solid rgba(0,180,130,.25);
+  border-right:1px solid rgba(0,180,130,.25);
+  padding:0 8px;display:flex;align-items:center;
+  font-family:'B612 Mono',monospace;font-size:12px;color:#bcd8c8;letter-spacing:.08em}
+.hud-data{position:absolute;font-family:'B612 Mono',monospace;font-size:9px;
+  color:rgba(100,170,120,.62);line-height:2}
+.hud-data.L{left:80px;top:50%;transform:translateY(-50%)}
+.hud-data.R{right:80px;top:50%;transform:translateY(-50%);text-align:right}
+.hud-lbl{font-family:'B612',sans-serif;font-size:6.5px;letter-spacing:.18em;
+  color:rgba(70,125,85,.35);text-transform:uppercase;margin-right:3px}
+
+/* ── INSTRUMENT PANEL ── */
+#instrPanel{
+  position:fixed;bottom:0;left:0;width:100%;z-index:30;
+  background:
+    linear-gradient(to bottom,rgba(120,90,40,.08) 0%,rgba(80,60,25,.04) 15%,transparent 35%),
+    repeating-linear-gradient(130deg,rgba(255,255,255,.007) 0,rgba(255,255,255,.007) 1px,transparent 1px,transparent 4px),
+    linear-gradient(175deg,#1c1e24 0%,#171920 40%,#131518 75%,#101214 100%);
+  border-top:1px solid rgba(200,160,80,.08);
+  box-shadow:0 -4px 40px rgba(0,0,0,.7),inset 0 1px 0 rgba(180,140,60,.05)
+}
+
+/* ── GAUGES ── */
+#gaugesRow{display:flex;align-items:flex-start;gap:0;padding:0;position:relative;z-index:1;
+  justify-content:flex-start}
+.gw{display:flex;flex-direction:column;align-items:center}
+.gc{border-radius:50%;display:block;flex-shrink:0;cursor:default}
+.gl{font-family:'B612',sans-serif;font-size:6.5px;letter-spacing:.18em;
+  color:rgba(130,115,80,.36);text-transform:uppercase;text-align:center;margin-top:3px}
+
+/* ── RADIO STACK ── */
+#radioStack{
+  position:absolute;right:12px;width:175px;
+  background:rgba(8,10,14,.65);border:1px solid rgba(50,55,45,.45);padding:7px 10px}
+.rr{display:flex;justify-content:space-between;align-items:center;
+  padding:2.5px 0;border-bottom:1px solid rgba(255,255,255,.025)}
+.rr:last-child{border-bottom:none}
+.ri{font-family:'B612',sans-serif;font-size:7px;letter-spacing:.18em;
+  color:rgba(120,110,75,.38);text-transform:uppercase}
+.rv{font-family:'B612 Mono',monospace;font-size:11.5px;color:rgba(200,175,105,.7);letter-spacing:.04em}
+
+/* ── SOFT KEYS ── */
+#softKeys{
+  position:absolute;bottom:0;left:0;width:100%;height:36px;
+  display:flex;border-top:1px solid rgba(255,255,255,.035);z-index:2}
+.sk{flex:1;height:100%;background:transparent;border:none;
+  border-right:1px solid rgba(255,255,255,.032);
+  color:rgba(130,148,135,.32);font-family:'B612',sans-serif;font-size:7px;
+  letter-spacing:.2em;cursor:pointer;text-transform:uppercase;
+  transition:color .14s,background .14s;position:relative;padding-bottom:1px}
+.sk:last-child{border-right:none}
+.sk:hover{color:rgba(175,195,178,.65);background:rgba(255,255,255,.014)}
+.sk.on{color:rgba(0,200,162,.85)}
+.sk.on::after{content:'';position:absolute;bottom:0;left:18%;width:64%;height:1px;
+  background:rgba(0,200,162,.5)}
+
+/* ── DATA OVERLAY ── */
+#dataOv{position:fixed;left:0;width:100%;z-index:50;display:none;flex-direction:column;
+  background:rgba(6,8,14,.95);backdrop-filter:blur(20px);
+  border-bottom:1px solid rgba(255,255,255,.05)}
+#dataOv.open{display:flex}
+.dv-bar{display:flex;align-items:center;justify-content:space-between;
+  padding:8px 18px;border-bottom:1px solid rgba(255,255,255,.045);flex-shrink:0}
+.dv-title{font-family:'B612',sans-serif;font-weight:700;font-size:9.5px;
+  letter-spacing:.28em;color:rgba(0,200,162,.8);text-transform:uppercase}
+.dv-close{font-family:'B612',sans-serif;font-size:7px;letter-spacing:.18em;
+  color:rgba(140,158,142,.48);background:none;border:1px solid rgba(255,255,255,.055);
+  padding:3px 9px;cursor:pointer;text-transform:uppercase;transition:color .12s}
+.dv-close:hover{color:rgba(210,225,215,.8)}
+.dv-body{flex:1;overflow-y:auto;padding:13px 18px;
+  scrollbar-width:thin;scrollbar-color:rgba(50,70,60,.25) transparent}
+.dv-pg{display:none}.dv-pg.on{display:block}
+
+/* ── CONTENT COMPONENTS ── */
+.sec{font-family:'B612',sans-serif;font-size:7px;letter-spacing:.25em;
+  color:rgba(0,200,162,.38);text-transform:uppercase;
+  margin:13px 0 7px;padding-bottom:4px;border-bottom:1px solid rgba(0,200,162,.07)}
+.sec:first-child{margin-top:0}
+.field-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px}
+.lbl{font-family:'B612',sans-serif;font-size:7.5px;letter-spacing:.14em;
+  color:rgba(135,148,138,.42);text-transform:uppercase;white-space:nowrap}
+.val{font-family:'B612 Mono',monospace;font-size:12px;color:rgba(205,220,210,.8);letter-spacing:.04em}
+.val.lg{font-size:22px;color:#c2e4d8}
+.val.grn{color:#38d882}.val.amb{color:#e8c038}.val.cyn{color:#00ccec}.val.red{color:#e04040}
+.inp{background:rgba(0,0,0,.5);border:1px solid rgba(40,50,44,.5);color:#b0c8bc;
+  font-family:'B612 Mono',monospace;font-size:11px;padding:5px 8px;outline:none;
+  letter-spacing:.04em;text-transform:uppercase}
+.inp:focus{border-color:rgba(0,200,162,.38)}.inp::placeholder{color:rgba(90,120,100,.25)}
+.btn{background:rgba(0,200,162,.06);border:1px solid rgba(0,200,162,.2);
+  color:rgba(0,200,162,.7);font-family:'B612',sans-serif;font-size:7px;
+  letter-spacing:.18em;padding:5px 11px;cursor:pointer;text-transform:uppercase;
+  transition:all .12s}.btn:hover{background:rgba(0,200,162,.14);color:rgba(0,200,162,1)}
+hr.dv{border:none;border-top:1px solid rgba(255,255,255,.038);margin:11px 0}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.g6{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
+/* stocks */
+.scard{background:rgba(8,12,18,.68);border:1px solid rgba(40,50,44,.38);padding:9px 11px}
+.stick{font-family:'B612 Mono',monospace;font-size:8.5px;letter-spacing:.2em;color:rgba(135,148,138,.52)}
+.sprice{font-family:'B612 Mono',monospace;font-size:19px;color:#c2e4d8;line-height:1.1;margin:3px 0 2px}
+.schg{font-family:'B612 Mono',monospace;font-size:8.5px}
+.schg.up{color:#38d882}.schg.dn{color:#e04040}
+/* budget */
+.bbar{height:5px;background:rgba(255,255,255,.055);margin-top:3px}
+.bfill{height:100%;transition:width .4s}
+/* training */
+.ci{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+.cbox{width:11px;height:11px;border:1px solid rgba(0,200,162,.28);flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;cursor:pointer}
+.cbox.chk{background:rgba(0,200,162,.14);border-color:rgba(0,200,162,.58)}
+.ck{font-size:7.5px;color:rgba(0,200,162,.88)}
+.clbl{font-family:'B612',sans-serif;font-size:8.5px;color:rgba(175,192,178,.6);letter-spacing:.04em}
+.ri-wrap{display:flex;gap:18px;justify-content:center;margin:8px 0}
+.ri-item{display:flex;flex-direction:column;align-items:center;gap:4px}
+.ri-lbl{font-family:'B612',sans-serif;font-size:6.5px;letter-spacing:.16em;
+  color:rgba(110,132,118,.42);text-transform:uppercase}
+/* logbook */
+.ltbl{width:100%;border-collapse:collapse}
+.ltbl th{font-family:'B612',sans-serif;font-size:6.5px;letter-spacing:.22em;
+  color:rgba(0,200,162,.42);text-transform:uppercase;text-align:left;
+  padding:4px 5px;border-bottom:1px solid rgba(0,200,162,.07)}
+.ltbl td{font-family:'B612 Mono',monospace;font-size:9.5px;color:rgba(175,192,178,.6);
+  padding:4px 5px;border-bottom:1px solid rgba(255,255,255,.028)}
+.ltbl tr:hover td{background:rgba(0,200,162,.022)}
+/* weather */
+.mraw{font-family:'B612 Mono',monospace;font-size:9.5px;color:rgba(190,205,195,.5);
+  background:rgba(4,7,11,.6);border:1px solid rgba(38,48,42,.3);
+  padding:7px 9px;letter-spacing:.03em;line-height:1.6;margin-bottom:11px;word-break:break-all}
+.wbig{font-family:'B612 Mono',monospace;font-size:26px;color:#c2e4d8;line-height:1}
+.wsub{font-family:'B612',sans-serif;font-size:7px;letter-spacing:.18em;
+  color:rgba(95,132,108,.42);text-transform:uppercase;margin-top:3px}
+.wblk{background:rgba(8,12,18,.68);border:1px solid rgba(40,50,44,.38);padding:11px 13px}
+.crow{display:flex;align-items:baseline;gap:6px;margin-bottom:4px}
+/* notes */
+.nta{width:100%;background:rgba(4,7,11,.6);border:1px solid rgba(38,48,42,.3);
+  color:rgba(175,192,178,.78);font-family:'B612 Mono',monospace;font-size:10.5px;
+  padding:9px 11px;resize:none;outline:none;line-height:1.7;letter-spacing:.02em}
+.nta::placeholder{color:rgba(75,105,85,.28)}
+/* ── new: tabs within a panel ── */
+.tabnav{display:flex;gap:0;margin-bottom:11px;border-bottom:1px solid rgba(255,255,255,.04)}
+.tab{background:none;border:none;color:rgba(140,158,142,.45);
+  font-family:'B612',sans-serif;font-size:7.5px;letter-spacing:.22em;
+  padding:7px 14px;cursor:pointer;text-transform:uppercase;
+  border-bottom:2px solid transparent;transition:color .14s,border-color .14s}
+.tab:hover{color:rgba(190,210,195,.7)}
+.tab.on{color:rgba(220,180,80,.92);border-bottom-color:rgba(220,180,80,.55)}
+.tabpane{display:none}.tabpane.on{display:block}
+/* ── new: radar scope ── */
+.scope-wrap{display:flex;justify-content:center;align-items:center;padding:6px 0}
+.scope{display:block;background:rgba(4,7,11,.85)}
+.trfc-tbl{width:100%;border-collapse:collapse;margin-top:6px}
+.trfc-tbl th{font-family:'B612',sans-serif;font-size:6.5px;letter-spacing:.22em;
+  color:rgba(220,180,80,.46);text-transform:uppercase;text-align:left;
+  padding:4px 5px;border-bottom:1px solid rgba(220,180,80,.1)}
+.trfc-tbl td{font-family:'B612 Mono',monospace;font-size:9.5px;color:rgba(195,210,200,.62);
+  padding:3px 5px;border-bottom:1px solid rgba(255,255,255,.022)}
+.trfc-tbl tr:hover td{background:rgba(220,180,80,.022)}
+/* ── new: card / airport blocks ── */
+.card{background:rgba(8,12,18,.55);border:1px solid rgba(40,50,44,.3);padding:10px 12px;margin-bottom:10px}
+.card-hdr{font-family:'B612',sans-serif;font-size:8px;letter-spacing:.22em;
+  color:rgba(220,180,80,.62);text-transform:uppercase;margin-bottom:8px;
+  padding-bottom:5px;border-bottom:1px solid rgba(220,180,80,.1)}
+.ap-rwy{display:flex;justify-content:space-between;align-items:baseline;
+  padding:4px 0;border-bottom:1px solid rgba(255,255,255,.022);
+  font-family:'B612 Mono',monospace;font-size:10px;color:rgba(195,210,200,.6)}
+.ap-rwy:last-child{border:none}
+.ap-rwy .rwid{color:rgba(220,180,80,.78);min-width:90px;letter-spacing:.05em}
+.ap-rwy .rdim{color:rgba(170,185,178,.5);font-size:8.5px;letter-spacing:.04em}
+.freq-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:5px}
+.freq-row{display:flex;justify-content:space-between;align-items:baseline;
+  padding:4px 7px;background:rgba(4,7,11,.4);border-left:2px solid rgba(220,180,80,.28)}
+.freq-row .ftype{font-family:'B612',sans-serif;font-size:7.5px;letter-spacing:.14em;
+  color:rgba(135,148,138,.5);text-transform:uppercase}
+.freq-row .fval{font-family:'B612 Mono',monospace;font-size:10.5px;
+  color:rgba(220,180,80,.82);letter-spacing:.04em}
+.sun-arc{display:block;margin:6px auto 0}
+/* ── new: E6B output ── */
+.e6-out{font-family:'B612 Mono',monospace;font-size:20px;color:#c2e4d8;margin-top:7px;letter-spacing:.04em}
+.e6-out.amb{color:#e8c038}.e6-out.red{color:#e04040}
+.e6-sub{font-family:'B612',sans-serif;font-size:7px;letter-spacing:.18em;
+  color:rgba(95,132,108,.42);text-transform:uppercase;margin-top:3px;line-height:1.6}
+/* ── new: currency rows ── */
+.cur-row{display:flex;align-items:center;gap:10px;margin-bottom:6px;padding:7px 10px;
+  background:rgba(8,12,18,.55);border:1px solid rgba(40,50,44,.32);
+  border-left:3px solid rgba(0,200,162,.32)}
+.cur-row.cur-warn{border-left-color:rgba(220,180,80,.62)}
+.cur-row.cur-fail{border-left-color:rgba(210,55,55,.6)}
+.cur-name{flex:1;font-family:'B612',sans-serif;font-size:8.5px;letter-spacing:.14em;
+  color:rgba(190,205,195,.65);text-transform:uppercase}
+.cur-stat{font-family:'B612 Mono',monospace;font-size:9px;letter-spacing:.04em;
+  min-width:170px;text-align:right;color:rgba(170,185,175,.5)}
+.cur-stat.ok{color:rgba(0,210,130,.82)}
+.cur-stat.warn{color:rgba(220,180,80,.82)}
+.cur-stat.fail{color:rgba(220,90,90,.82)}
+.inp[type=date]{font-family:'B612 Mono',monospace}
+/* ── new: news article ── */
+.nws{background:rgba(8,12,18,.55);border:1px solid rgba(40,50,44,.3);
+  border-left:3px solid rgba(220,180,80,.45);padding:9px 12px;margin-bottom:8px}
+.nws-meta{display:flex;justify-content:space-between;font-family:'B612',sans-serif;
+  font-size:7px;letter-spacing:.18em;color:rgba(135,148,138,.55);
+  text-transform:uppercase;margin-bottom:5px}
+.nws-meta .src{color:rgba(220,180,80,.78)}
+.nws-ttl{font-family:'B612',sans-serif;font-size:11px;font-weight:700;
+  color:rgba(225,228,210,.85);line-height:1.35;margin-bottom:5px;letter-spacing:.01em}
+.nws-sum{font-family:'B612',sans-serif;font-size:9px;color:rgba(170,185,175,.55);
+  line-height:1.55;margin-bottom:6px}
+.nws-link{font-family:'B612',sans-serif;font-size:7px;letter-spacing:.22em;
+  color:rgba(220,180,80,.78);text-decoration:none;text-transform:uppercase;
+  border-bottom:1px solid rgba(220,180,80,.32);padding-bottom:1px}
+.nws-link:hover{color:rgba(255,210,100,1)}
+/* ── WBAL iframe (paper-on-glass effect) ── */
+.wbal-frame{
+  height:1280px;max-height:calc(100vh - 180px);
+  border:1px solid rgba(220,180,80,.45);
+  box-shadow:
+    0 0 0 1px rgba(0,0,0,.6) inset,
+    0 0 18px rgba(220,180,80,.18),
+    0 0 0 4px rgba(20,16,8,.65);
+  background:#fff;overflow:hidden;border-radius:2px;
+  position:relative;
+}
+.wbal-frame::before{
+  content:'WORKSHEET · N32069';position:absolute;top:-18px;left:0;
+  font-family:'B612',sans-serif;font-size:7px;letter-spacing:.22em;
+  color:rgba(220,180,80,.62);text-transform:uppercase;
+}
+/* ── TRAINING — notebook redesign ── */
+.trn-mode{display:flex;gap:6px;margin-bottom:14px}
+.trn-mode .sk-tab{flex:1;background:rgba(8,12,18,.55);
+  border:1px solid rgba(40,50,44,.4);color:rgba(135,148,138,.5);
+  font-family:'B612',sans-serif;font-size:8px;letter-spacing:.22em;
+  padding:9px 10px;cursor:pointer;text-transform:uppercase;
+  transition:all .14s;border-left:3px solid rgba(40,50,44,.4)}
+.trn-mode .sk-tab:hover{color:rgba(195,210,200,.78)}
+.trn-mode .sk-tab.on{color:rgba(220,180,80,.92);
+  border-color:rgba(220,180,80,.55);
+  border-left-color:rgba(220,180,80,.85);
+  background:rgba(40,30,8,.42)}
+.trn-track{display:none}.trn-track.on{display:block}
+.trn-stage{background:rgba(8,12,18,.55);border:1px solid rgba(40,50,44,.34);
+  border-left:3px solid rgba(220,180,80,.32);margin-bottom:11px}
+.trn-stage.done{border-left-color:rgba(0,200,162,.62)}
+.trn-stage-hdr{display:flex;align-items:center;gap:10px;padding:10px 13px;
+  cursor:pointer;user-select:none;transition:background .14s}
+.trn-stage-hdr:hover{background:rgba(255,255,255,.018)}
+.trn-stage-hdr .sn{font-family:'B612 Mono',monospace;font-size:9px;
+  color:rgba(220,180,80,.62);letter-spacing:.06em;min-width:36px}
+.trn-stage-hdr .st{flex:1;font-family:'B612',sans-serif;font-size:9.5px;
+  color:rgba(225,228,210,.78);letter-spacing:.04em;font-weight:700}
+.trn-stage-hdr .sp{font-family:'B612 Mono',monospace;font-size:8.5px;
+  color:rgba(0,200,162,.6);letter-spacing:.04em;min-width:42px;text-align:right}
+.trn-stage-hdr .sx{font-family:'B612',sans-serif;font-size:9px;
+  color:rgba(135,148,138,.5);transition:transform .15s}
+.trn-stage.open .sx{transform:rotate(90deg)}
+.trn-stage-body{display:none;padding:6px 13px 13px;border-top:1px solid rgba(255,255,255,.025)}
+.trn-stage.open .trn-stage-body{display:block}
+.trn-step{padding:9px 0;border-bottom:1px dashed rgba(255,255,255,.04)}
+.trn-step:last-child{border-bottom:none}
+.trn-step-top{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.trn-step-top .cbox{width:13px;height:13px}
+.trn-step-top .clbl{font-size:9px;color:rgba(195,210,200,.7);letter-spacing:.02em;flex:1}
+.trn-step-top .clbl.done{color:rgba(0,200,162,.85);text-decoration:line-through;text-decoration-color:rgba(0,200,162,.32)}
+.trn-fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
+  gap:6px;padding-left:21px;margin-bottom:5px}
+.trn-fld{display:flex;flex-direction:column;gap:2px}
+.trn-fld label{font-family:'B612',sans-serif;font-size:6.5px;letter-spacing:.18em;
+  color:rgba(110,132,118,.42);text-transform:uppercase}
+.trn-fld input,.trn-fld select{background:rgba(0,0,0,.45);
+  border:1px solid rgba(40,50,44,.4);color:rgba(195,210,200,.78);
+  font-family:'B612 Mono',monospace;font-size:9.5px;padding:4px 7px;outline:none;
+  letter-spacing:.03em;text-transform:uppercase}
+.trn-fld input:focus,.trn-fld select:focus{border-color:rgba(220,180,80,.5)}
+.trn-files{padding-left:21px;margin-top:6px}
+.trn-files-row{display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap}
+.trn-thumbs{display:flex;flex-wrap:wrap;gap:5px;margin-top:5px;padding-left:21px}
+.trn-thumb{position:relative;background:rgba(8,12,18,.55);
+  border:1px solid rgba(220,180,80,.32);padding:3px;
+  display:flex;flex-direction:column;align-items:center;gap:3px;width:78px}
+.trn-thumb img{width:72px;height:54px;object-fit:cover;display:block}
+.trn-thumb .doc{width:72px;height:54px;display:flex;align-items:center;justify-content:center;
+  background:rgba(220,180,80,.08);font-family:'B612 Mono',monospace;font-size:9px;
+  color:rgba(220,180,80,.7);letter-spacing:.06em}
+.trn-thumb .nm{font-family:'B612 Mono',monospace;font-size:7px;
+  color:rgba(170,185,178,.6);max-width:72px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.trn-thumb .rm{position:absolute;top:1px;right:2px;width:14px;height:14px;
+  background:rgba(0,0,0,.7);border:1px solid rgba(210,55,55,.5);
+  color:rgba(220,90,90,.85);font-family:'B612 Mono',monospace;font-size:9px;
+  cursor:pointer;display:flex;align-items:center;justify-content:center}
+.trn-stage-notes{margin-top:7px;padding-left:21px}
+.trn-stage-notes textarea{width:100%;background:rgba(4,7,11,.55);
+  border:1px solid rgba(38,48,42,.3);color:rgba(175,192,178,.72);
+  font-family:'B612 Mono',monospace;font-size:9.5px;padding:7px 9px;
+  resize:vertical;outline:none;line-height:1.6;letter-spacing:.02em;min-height:50px}
+.trn-stage-notes textarea:focus{border-color:rgba(220,180,80,.4)}
+
+/* TIMELINE */
+.trn-timeline{margin:6px 0 14px;padding:14px 18px 10px;
+  background:rgba(8,12,18,.55);border:1px solid rgba(40,50,44,.32);
+  border-left:3px solid rgba(220,180,80,.55)}
+.trn-tl-bar{position:relative;height:4px;background:rgba(255,255,255,.06);margin:14px 6px 8px}
+.trn-tl-fill{position:absolute;top:0;left:0;height:100%;
+  background:linear-gradient(90deg,rgba(0,200,162,.7),rgba(220,180,80,.85));
+  transition:width .4s}
+.trn-tl-stops{position:relative;display:flex;justify-content:space-between;margin-top:-13px}
+.trn-tl-stop{display:flex;flex-direction:column;align-items:center;gap:4px;flex:1}
+.trn-tl-dot{width:14px;height:14px;border-radius:50%;background:rgba(15,18,24,1);
+  border:2px solid rgba(135,148,138,.4);transition:all .25s}
+.trn-tl-dot.done{background:rgba(0,200,162,.55);border-color:rgba(0,200,162,.85);
+  box-shadow:0 0 8px rgba(0,200,162,.45)}
+.trn-tl-dot.now{background:rgba(220,180,80,.6);border-color:rgba(220,180,80,1);
+  box-shadow:0 0 12px rgba(220,180,80,.6);animation:pulseAmb 1.6s ease-in-out infinite}
+@keyframes pulseAmb{50%{box-shadow:0 0 18px rgba(220,180,80,.85)}}
+.trn-tl-lbl{font-family:'B612',sans-serif;font-size:7px;letter-spacing:.18em;
+  color:rgba(135,148,138,.55);text-transform:uppercase;text-align:center;line-height:1.4}
+.trn-tl-lbl.now{color:rgba(220,180,80,.92)}
+.trn-tl-lbl.done{color:rgba(0,200,162,.78)}
+.trn-pct-row{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:4px}
+.trn-pct-big{font-family:'B612 Mono',monospace;font-size:24px;color:#c2e4d8;letter-spacing:.04em}
+.trn-pct-sub{font-family:'B612',sans-serif;font-size:7.5px;letter-spacing:.22em;
+  color:rgba(135,148,138,.5);text-transform:uppercase}
+
+/* MILESTONES */
+.trn-mile-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin-top:6px}
+.trn-mile{background:rgba(8,12,18,.6);border:1px solid rgba(40,50,44,.35);
+  padding:9px 10px;display:flex;align-items:center;gap:9px;
+  border-left:3px solid rgba(60,70,68,.4);transition:all .25s}
+.trn-mile.unl{border-left-color:rgba(220,180,80,.85);
+  background:linear-gradient(90deg,rgba(40,30,8,.5),rgba(8,12,18,.6) 40%);
+  box-shadow:0 0 10px rgba(220,180,80,.06) inset}
+.trn-mile .ico{width:22px;height:22px;display:flex;align-items:center;justify-content:center;
+  font-family:'B612 Mono',monospace;font-size:13px;
+  color:rgba(95,105,98,.4);flex-shrink:0;line-height:1}
+.trn-mile.unl .ico{color:rgba(255,210,100,.95);text-shadow:0 0 6px rgba(220,180,80,.55)}
+.trn-mile .mname{font-family:'B612',sans-serif;font-size:8px;letter-spacing:.12em;
+  color:rgba(125,135,128,.5);text-transform:uppercase;line-height:1.35}
+.trn-mile.unl .mname{color:rgba(225,228,210,.85)}
+.trn-mile .mdate{font-family:'B612 Mono',monospace;font-size:7px;
+  color:rgba(170,185,178,.4);margin-top:2px;letter-spacing:.04em}
+.trn-mile.unl .mdate{color:rgba(220,180,80,.6)}
+.trn-mile-flex{flex:1;min-width:0}
+
+/* NOTEBOOK MODAL */
+#trnNotebook{position:fixed;top:24px;left:0;width:100%;z-index:60;
+  display:none;flex-direction:column;
+  background:linear-gradient(180deg,rgba(6,8,14,.985) 0%,rgba(8,10,16,.985) 100%);
+  backdrop-filter:blur(22px);
+  border-bottom:1px solid rgba(220,180,80,.25);
+  box-shadow:0 0 0 1px rgba(220,180,80,.18),0 6px 30px rgba(0,0,0,.7)}
+#trnNotebook.open{display:flex}
+#trnNotebook .nb-bar{display:flex;align-items:center;justify-content:space-between;
+  padding:9px 18px;border-bottom:1px solid rgba(220,180,80,.18);flex-shrink:0;
+  background:linear-gradient(180deg,rgba(40,30,8,.32),rgba(8,12,18,.4))}
+#trnNotebook .nb-title{font-family:'B612',sans-serif;font-weight:700;font-size:10px;
+  letter-spacing:.32em;color:rgba(220,180,80,.85);text-transform:uppercase}
+#trnNotebook .nb-title::before{content:'❖ ';opacity:.62}
+#trnNotebook .nb-close{font-family:'B612',sans-serif;font-size:7.5px;letter-spacing:.22em;
+  color:rgba(220,180,80,.55);background:rgba(40,30,8,.25);
+  border:1px solid rgba(220,180,80,.32);padding:5px 12px;cursor:pointer;
+  text-transform:uppercase;transition:all .14s}
+#trnNotebook .nb-close:hover{color:rgba(255,210,100,1);
+  background:rgba(60,42,12,.5);border-color:rgba(220,180,80,.6)}
+#trnNotebook .nb-body{flex:1;overflow-y:auto;padding:14px 22px 90px;
+  scrollbar-width:thin;scrollbar-color:rgba(220,180,80,.22) transparent}
+::-webkit-scrollbar{width:3px}
+::-webkit-scrollbar-thumb{background:rgba(50,70,58,.22)}
+</style>
+</head>
+<body>
+
+<!-- layers -->
+<div id="skyBg"></div>
+<canvas id="cloudCanvas"></canvas>
+<canvas id="glCanvas"></canvas>
+<div id="glassOv"></div>
+<canvas id="hudCanvas"></canvas>
+
+<!-- top bar -->
+<div id="topBar">
+  <span class="t-reg" id="tReg">N-529TF · SKYCOMMAND</span>
+  <span class="t-utc" id="tUtc">00:00:00Z</span>
+</div>
+
+<!-- hud tapes -->
+<div id="hudTapes">
+  <div class="tape-wrap spd"><div class="tape-body"><div class="tape-cur" id="spdVal">152</div></div><div class="tape-unit">KTS IAS</div></div>
+  <div class="tape-wrap alt"><div class="tape-body"><div class="tape-cur" id="altVal">FL410</div></div><div class="tape-unit">ALT MSL</div></div>
+  <div id="hdgTape"><div id="hdgBox">275°</div></div>
+  <div class="hud-data L" id="hudL"></div>
+  <div class="hud-data R" id="hudR"></div>
+</div>
+
+<!-- instrument panel -->
+<div id="instrPanel">
+  <div id="gaugesRow"></div>
+  <div id="radioStack">
+    <div class="rr"><span class="ri">COM 1</span><span class="rv" id="rc1">122.800</span></div>
+    <div class="rr"><span class="ri">COM 2</span><span class="rv" id="rc2">118.300</span></div>
+    <div class="rr"><span class="ri">NAV 1</span><span class="rv" id="rn1">109.90</span></div>
+    <div class="rr"><span class="ri">NAV 2</span><span class="rv" id="rn2">113.40</span></div>
+    <div class="rr"><span class="ri">XPDR </span><span class="rv" id="rxp">1200</span></div>
+  </div>
+  <div id="softKeys">
+    <button class="sk" onclick="openPanel('market',this)">MKTW</button>
+    <button class="sk" onclick="openPanel('budget',this)">BGET</button>
+    <button class="sk" onclick="openTrainingNotebook(this)">CERT</button>
+    <button class="sk" onclick="openPanel('logbk',this)">LGBK</button>
+    <button class="sk" onclick="openPanel('wxob',this)">WXOB</button>
+    <button class="sk" onclick="openPanel('arpt',this)">ARPT</button>
+    <button class="sk" onclick="openPanel('trfc',this)">TRFC</button>
+    <button class="sk" onclick="openPanel('notm',this)">NOTM</button>
+    <button class="sk" onclick="openPanel('e6b',this)">E6B</button>
+    <button class="sk" onclick="openPanel('crny',this)">CRNY</button>
+    <button class="sk" onclick="openPanel('wbal',this)">WBAL</button>
+    <button class="sk" onclick="openPanel('memo',this)">MEMO</button>
+  </div>
+</div>
+
+<!-- data overlay -->
+<div id="dataOv">
+  <div class="dv-bar">
+    <span class="dv-title" id="dvTitle">MARKET WATCH</span>
+    <button class="dv-close" onclick="closePanel()">▼ CLOSE</button>
+  </div>
+  <div class="dv-body">
+
+    <div class="dv-pg" id="pg-market">
+      <div class="tabnav">
+        <button class="tab on" id="mktTabP" onclick="mktTab('prices')">PRICES</button>
+        <button class="tab" id="mktTabN" onclick="mktTab('news')">MARKET NEWS</button>
+      </div>
+      <div class="tabpane on" id="mktPane-prices">
+        <div class="field-row" style="margin-bottom:10px">
+          <input class="inp" id="apiKey" placeholder="FINNHUB API KEY (OPTIONAL)" style="width:230px">
+          <button class="btn" onclick="loadStocks()">REFRESH</button>
+          <span class="lbl" id="mktStat">DEMO MODE</span>
+          <span class="lbl" id="alertStat" style="margin-left:auto;color:rgba(135,148,138,.4)">ALERTS: —</span>
+        </div>
+        <div class="g6" id="stockGrid"></div>
+      </div>
+      <div class="tabpane" id="mktPane-news">
+        <div class="field-row" style="margin-bottom:10px">
+          <button class="btn" onclick="loadNews()">REFRESH NEWS</button>
+          <span class="lbl" id="newsStat">REQUIRES FINNHUB KEY</span>
+        </div>
+        <div id="newsList"></div>
+      </div>
+    </div>
+
+    <div class="dv-pg" id="pg-budget">
+      <div class="g2">
+        <div>
+          <div class="sec">Income</div>
+          <div id="incRows"></div>
+          <div class="field-row" style="margin-top:7px">
+            <input class="inp" id="iLbl" placeholder="SOURCE" style="width:110px">
+            <input class="inp" id="iAmt" placeholder="$" style="width:70px">
+            <button class="btn" onclick="addInc()">+</button>
+          </div>
+        </div>
+        <div>
+          <div class="sec">Expenses</div>
+          <div id="expRows"></div>
+          <div class="field-row" style="margin-top:7px">
+            <input class="inp" id="eLbl" placeholder="CATEGORY" style="width:110px">
+            <input class="inp" id="eAmt" placeholder="$" style="width:70px">
+            <button class="btn" onclick="addExp()">+</button>
+          </div>
+        </div>
+      </div>
+      <hr class="dv">
+      <div class="field-row">
+        <div style="margin-right:22px"><div class="lbl">INCOME</div><div class="val lg grn" id="tInc">$0</div></div>
+        <div style="margin-right:22px"><div class="lbl">EXPENSES</div><div class="val lg amb" id="tExp">$0</div></div>
+        <div><div class="lbl">NET SAVINGS</div><div class="val lg" id="tNet">$0</div></div>
+      </div>
+      <canvas id="budgC" style="width:100%;height:110px;display:block;margin-top:8px"></canvas>
+    </div>
+
+    <div class="dv-pg" id="pg-train">
+      <div class="lbl" style="text-align:center;padding:30px 0;color:rgba(135,148,138,.35)">OPENING NOTEBOOK…</div>
+    </div>
+
+    <div class="dv-pg" id="pg-logbk">
+      <div class="sec">New Entry</div>
+      <div class="field-row" style="flex-wrap:wrap;gap:5px;margin-bottom:10px">
+        <input class="inp" id="lgD" placeholder="DATE" style="width:95px">
+        <input class="inp" id="lgA" placeholder="A/C" style="width:80px">
+        <input class="inp" id="lgF" placeholder="FROM" style="width:65px">
+        <input class="inp" id="lgT" placeholder="TO" style="width:65px">
+        <input class="inp" id="lgH" placeholder="HRS" style="width:58px">
+        <input class="inp" id="lgR" placeholder="REMARKS" style="width:150px">
+        <button class="btn" onclick="addLog()">LOG ENTRY</button>
+      </div>
+      <table class="ltbl">
+        <thead><tr><th>DATE</th><th>A/C</th><th>FROM</th><th>TO</th><th>HRS</th><th>REMARKS</th></tr></thead>
+        <tbody id="logBody"></tbody>
+      </table>
+      <div class="field-row" style="margin-top:8px">
+        <span class="lbl">TOTAL:</span><span class="val cyn" id="totHrs">0.0 HRS</span>
+      </div>
+    </div>
+
+    <div class="dv-pg" id="pg-wxob">
+      <div class="sec">Aviation Weather — aviationweather.gov</div>
+      <div class="field-row" style="margin-bottom:12px">
+        <input class="inp" id="wxIcao" placeholder="ICAO (e.g. KDFW)" style="width:130px;text-transform:uppercase">
+        <button class="btn" onclick="fetchWx()">FETCH METAR / TAF</button>
+        <span class="lbl" id="wxStat"></span>
+      </div>
+      <div id="wxDisp" style="color:rgba(95,125,105,.32);font-family:'B612',sans-serif;
+        font-size:8.5px;letter-spacing:.14em;text-transform:uppercase;margin-top:18px;text-align:center">
+        ENTER ICAO CODE AND PRESS FETCH
+      </div>
+    </div>
+
+    <div class="dv-pg" id="pg-trfc">
+      <div class="sec">Live Traffic — OpenSky Network (Anonymous)</div>
+      <div class="field-row" style="margin-bottom:10px">
+        <input class="inp" id="trIcao" placeholder="CENTER ICAO (E.G. KGMU)" style="width:170px;text-transform:uppercase">
+        <input class="inp" id="trRng" placeholder="NM" style="width:70px" value="40">
+        <button class="btn" onclick="fetchTraffic()">SCAN</button>
+        <span class="lbl" id="trStat">READY</span>
+      </div>
+      <div class="g2" style="gap:14px;align-items:flex-start">
+        <div>
+          <div class="card-hdr" style="margin-bottom:0">RADAR SCOPE</div>
+          <div class="scope-wrap"><canvas id="scope" class="scope" width="280" height="280"></canvas></div>
+        </div>
+        <div>
+          <div class="card-hdr">TARGETS</div>
+          <table class="trfc-tbl">
+            <thead><tr><th>CALL</th><th>ALT FT</th><th>SPD KT</th><th>HDG</th><th>DIST</th></tr></thead>
+            <tbody id="trBody"><tr><td colspan="5" style="text-align:center;color:rgba(120,135,128,.4);padding:14px 0">PRESS SCAN</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="lbl" style="font-size:7px;letter-spacing:.14em;color:rgba(135,148,138,.32);margin-top:12px;line-height:1.6">
+        OPENSKY ANONYMOUS RATE LIMIT ≈ 100 REQ / DAY · NOT FOR PRIMARY SEPARATION
+      </div>
+    </div>
+
+    <div class="dv-pg" id="pg-notm">
+      <div class="sec">NOTAMs &amp; TFRs</div>
+      <div class="card">
+        <div class="card-hdr">FAA NOTAM SEARCH</div>
+        <div class="lbl" style="font-size:7.5px;letter-spacing:.14em;color:rgba(160,175,165,.5);margin-bottom:9px;line-height:1.7">
+          The FAA's notamapi.faa.gov endpoint requires a registered API key. This panel launches the official public NOTAM Search at notams.aim.faa.gov pre-filled with your airport.
+        </div>
+        <div class="field-row">
+          <input class="inp" id="ntIcao" placeholder="ICAO" style="width:130px;text-transform:uppercase">
+          <button class="btn" onclick="openNotamSearch()">OPEN NOTAM SEARCH</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-hdr">TEMPORARY FLIGHT RESTRICTIONS</div>
+        <div class="lbl" style="font-size:7.5px;letter-spacing:.14em;color:rgba(160,175,165,.5);margin-bottom:9px;line-height:1.7">
+          Always brief active TFRs before any flight. Opens the FAA's TFR list at tfr.faa.gov.
+        </div>
+        <button class="btn" onclick="openTfrList()">VIEW ACTIVE TFRs</button>
+      </div>
+      <div class="card">
+        <div class="card-hdr">EFB CHECKLIST</div>
+        <div class="lbl" style="font-size:7.5px;letter-spacing:.14em;color:rgba(160,175,165,.45);line-height:1.85">
+          1. CHECK NOTAMs FOR DEPARTURE, DESTINATION, AND ALTERNATE<br>
+          2. REVIEW TFRs ALONG ROUTE OF FLIGHT<br>
+          3. CHECK NOTAMs FOR ANY VOR/NAVAID USED FOR APPROACH<br>
+          4. NOTE GPS RAIM PREDICTION FOR NON-WAAS OPERATIONS<br>
+          5. RE-CHECK 30 MIN BEFORE DEPARTURE
+        </div>
+      </div>
+    </div>
+
+    <div class="dv-pg" id="pg-arpt">
+      <div class="sec">Airport Information — aviationweather.gov</div>
+      <div class="field-row" style="margin-bottom:10px">
+        <input class="inp" id="apIcao" placeholder="ICAO (E.G. KGMU)" style="width:160px;text-transform:uppercase">
+        <button class="btn" onclick="fetchAirport()">FETCH</button>
+        <span class="lbl" id="apStat"></span>
+      </div>
+      <div id="apDisp" style="color:rgba(95,125,105,.32);font-family:'B612',sans-serif;font-size:8.5px;letter-spacing:.14em;text-transform:uppercase;margin-top:18px;text-align:center">
+        ENTER ICAO CODE AND PRESS FETCH
+      </div>
+    </div>
+
+    <div class="dv-pg" id="pg-e6b">
+      <div class="sec">E6B — Quick Calculations</div>
+      <div class="g3" style="gap:14px">
+        <div class="card">
+          <div class="card-hdr">DENSITY ALTITUDE</div>
+          <div class="field-row"><span class="lbl" style="width:90px">PRESS ALT</span><input class="inp" id="daPa" placeholder="FT" style="width:90px"></div>
+          <div class="field-row"><span class="lbl" style="width:90px">OAT</span><input class="inp" id="daOat" placeholder="°C" style="width:90px"></div>
+          <button class="btn" onclick="calcDA()">CALC</button>
+          <div class="e6-out" id="daOut">— FT</div>
+          <div class="e6-sub" id="daIsa">ENTER PRESSURE ALT &amp; OAT</div>
+        </div>
+        <div class="card">
+          <div class="card-hdr">CROSSWIND COMPONENT</div>
+          <div class="field-row"><span class="lbl" style="width:90px">RWY HDG</span><input class="inp" id="cwRwy" placeholder="DEG" style="width:90px"></div>
+          <div class="field-row"><span class="lbl" style="width:90px">WIND DIR</span><input class="inp" id="cwDir" placeholder="DEG" style="width:90px"></div>
+          <div class="field-row"><span class="lbl" style="width:90px">WIND SPD</span><input class="inp" id="cwSpd" placeholder="KT" style="width:90px"></div>
+          <button class="btn" onclick="calcXWind()">CALC</button>
+          <div class="e6-out" id="cwOut">XW —  HW —</div>
+          <div class="e6-sub" id="cwSub">ENTER RUNWAY &amp; WIND</div>
+        </div>
+        <div class="card">
+          <div class="card-hdr">TAS FROM IAS</div>
+          <div class="field-row"><span class="lbl" style="width:90px">IAS</span><input class="inp" id="tasIas" placeholder="KT" style="width:90px"></div>
+          <div class="field-row"><span class="lbl" style="width:90px">PRESS ALT</span><input class="inp" id="tasPa" placeholder="FT" style="width:90px"></div>
+          <div class="field-row"><span class="lbl" style="width:90px">OAT</span><input class="inp" id="tasOat" placeholder="°C" style="width:90px"></div>
+          <button class="btn" onclick="calcTAS()">CALC</button>
+          <div class="e6-out" id="tasOut">— KT</div>
+          <div class="e6-sub" id="tasSub">USES STANDARD ATMOSPHERE</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dv-pg" id="pg-crny">
+      <div class="sec">Currency Tracker</div>
+      <div class="lbl" style="font-size:7.5px;letter-spacing:.14em;color:rgba(160,175,165,.42);margin-bottom:11px;line-height:1.8">
+        Enter the date of each event. Status shows the next "current until" date based on FAR 61. Saved locally in your browser.
+      </div>
+      <div class="field-row" style="margin-bottom:9px">
+        <span class="lbl">YOUR AGE</span>
+        <input class="inp" id="curAge" type="number" placeholder="40" style="width:80px">
+        <span class="lbl" style="font-size:7px;color:rgba(135,148,138,.4)">USED FOR MEDICAL EXPIRATION</span>
+      </div>
+      <div id="curList"></div>
+      <hr class="dv">
+      <div class="sec">Recent Takeoffs / Landings — 90-Day Window</div>
+      <div class="g2" style="gap:14px">
+        <div class="card">
+          <div class="card-hdr">DAY PASSENGER · 3 IN 90</div>
+          <div id="dayTL"></div>
+          <div class="field-row" style="margin-top:8px">
+            <input class="inp" id="dtlD" type="date" style="width:170px">
+            <button class="btn" onclick="addTL('day')">+ DAY T/L</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-hdr">NIGHT PASSENGER · 3 IN 90 (FULL STOP)</div>
+          <div id="ntTL"></div>
+          <div class="field-row" style="margin-top:8px">
+            <input class="inp" id="ntlD" type="date" style="width:170px">
+            <button class="btn" onclick="addTL('night')">+ NIGHT T/L</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dv-pg" id="pg-wbal">
+      <div class="sec">N32069 · Greenville Aviation · Piper Warrior PA-28-161</div>
+      <div class="lbl" style="font-size:7.5px;letter-spacing:.14em;color:rgba(160,175,165,.42);margin-bottom:9px;line-height:1.7">
+        Pre-flight weight, balance &amp; performance worksheet. Live calculations. Envelope plot. Print-friendly.
+      </div>
+      <div class="wbal-frame">
+        <iframe id="wbalIframe" src="n32069-weight-balance.html"
+          title="N32069 Weight &amp; Balance"
+          style="width:100%;height:100%;border:0;background:#fff"></iframe>
+      </div>
+      <div class="lbl" style="font-size:7px;letter-spacing:.14em;color:rgba(135,148,138,.32);margin-top:9px;line-height:1.6">
+        Worksheet runs offline. POH still governs. Envelope shown is the standard PA-28-161 chart.
+      </div>
+    </div>
+
+    <div class="dv-pg" id="pg-memo">
+      <div class="sec">Pilot Notes</div>
+      <textarea class="nta" id="noteTa" rows="16" placeholder="TYPE HERE — AUTO-SAVED"></textarea>
+    </div>
+
+  </div>
+</div>
+
+<!-- Training notebook overlay (separate from dataOv for distinct notebook feel) -->
+<div id="trnNotebook">
+  <div class="nb-bar">
+    <span class="nb-title">FLIGHT TRAINING NOTEBOOK</span>
+    <button class="nb-close" onclick="closeTrainingNotebook()">▼ CLOSE NOTEBOOK</button>
+  </div>
+  <div class="nb-body">
+    <div class="trn-mode">
+      <button class="sk-tab on" id="trnBtn-cfi" onclick="trnTrack('cfi')">CFI · INSTRUCTOR CERT</button>
+      <button class="sk-tab" id="trnBtn-bizjet" onclick="trnTrack('bizjet')">BIZJET · TYPE RATING</button>
+    </div>
+    <div class="trn-track on" id="trnTrack-cfi"></div>
+    <div class="trn-track" id="trnTrack-bizjet"></div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+'use strict';
+const LS={get:(k,d)=>{try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch{return d}},set:(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch{}}};
+let CFG=LS.get('cfg',{registration:'N-529TF',callsign:'SKYCOMMAND',homeAirport:'KGMU',
+  finnhubKey:'',com1:'122.800',com2:'118.300',nav1:'109.90',nav2:'113.40',xpdr:'1200',
+  tickers:['AAPL','MSFT','GOOGL','AMZN','TSLA','META'],
+  income:[],expenses:[],certs:[],hours:{},logbook:[],notes:'',
+  curr:{},tlDay:[],tlNight:[]});
+if(!CFG.curr) CFG.curr={};
+if(!CFG.tlDay) CFG.tlDay=[];
+if(!CFG.tlNight) CFG.tlNight=[];
+const SIM={alt:41000,ias:152,hdg:275,vs:0,bank:0,pitch:2,oat:-56,tat:-42,n1a:88.2,n1b:88.5,fuel:8420};
+const DPR=()=>window.devicePixelRatio||1;
+const PANEL_PCT=0.40;
+let PANEL_H=0;
+
+function getLayout(){
+  PANEL_H=Math.round(window.innerHeight*PANEL_PCT);
+  return{W:window.innerWidth,H:window.innerHeight,PH:PANEL_H,VH:window.innerHeight-PANEL_H-24};
+}
+
+/* ── CLOCK ── */
+document.getElementById('tReg').textContent=CFG.registration+' · '+CFG.callsign;
+setInterval(()=>{const n=new Date(),p=v=>String(v).padStart(2,'0');
+  document.getElementById('tUtc').textContent=p(n.getUTCHours())+':'+p(n.getUTCMinutes())+':'+p(n.getUTCSeconds())+'Z';},1000);
+
+/* ── LAYOUT ── */
+function applyLayout(){
+  const{W,H,PH,VH}=getLayout();
+  const ip=document.getElementById('instrPanel');
+  ip.style.height=PH+'px';
+  const ht=document.getElementById('hudTapes');
+  ht.style.top='24px'; ht.style.height=VH+'px';
+  const hc=document.getElementById('hudCanvas');
+  const dpr=DPR();
+  hc.width=W*dpr; hc.height=VH*dpr;
+  hc.style.width=W+'px'; hc.style.height=VH+'px';
+  hc.style.top='24px';
+  const dov=document.getElementById('dataOv');
+  dov.style.top='24px'; dov.style.height=(H-24-PH)+'px';
+  const nb=document.getElementById('trnNotebook');
+  if(nb){nb.style.top='24px'; nb.style.height=(H-24-PH)+'px';}
+  const glassOv=document.getElementById('glassOv');
+  glassOv.style.height=VH+'px'; glassOv.style.top='24px';
+  const rs=document.getElementById('radioStack');
+  if(rs){ rs.style.bottom='42px'; rs.style.top='auto'; }
+}
+applyLayout();
+window.addEventListener('resize',()=>{applyLayout();initGauges();drawHUD();});
+
+/* ── THREE.JS COCKPIT FRAME ── */
+(function initThree(){
+  const canvas=document.getElementById('glCanvas');
+  const{W,H}=getLayout();
+  const dpr=DPR();
+  canvas.width=W*dpr; canvas.height=H*dpr;
+  canvas.style.width=W+'px'; canvas.style.height=H+'px';
+
+  const renderer=new THREE.WebGLRenderer({canvas,alpha:true,antialias:true});
+  renderer.setPixelRatio(dpr);
+  renderer.setSize(W,H,false);
+  renderer.physicallyCorrectLights=true;
+  renderer.toneMapping=THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure=0.9;
+  renderer.shadowMap.enabled=true;
+
+  const scene=new THREE.Scene();
+  const camera=new THREE.PerspectiveCamera(62,W/H,0.01,200);
+  camera.position.set(0,0,0);
+
+  // Warm sun light from upper right
+  const sun=new THREE.DirectionalLight(0xffe8b0,2.8);
+  sun.position.set(3.5,6,4); sun.castShadow=true;
+  scene.add(sun);
+  // Sky fill light (blue-ish ambient from above)
+  scene.add(new THREE.AmbientLight(0xc0d8f0,0.55));
+  // Warm bounce light from below (ground reflection)
+  const bounce=new THREE.DirectionalLight(0xd0b870,0.25);
+  bounce.position.set(0,-4,2); scene.add(bounce);
+  // Instrument panel illumination (warm green from gauges)
+  const panelGlow=new THREE.PointLight(0x80c090,0.18,6);
+  panelGlow.position.set(0,-1.2,-2); scene.add(panelGlow);
+
+  const darkMat=new THREE.MeshStandardMaterial({color:new THREE.Color(0.042,0.038,0.032),roughness:0.88,metalness:0.12});
+  const innerMat=new THREE.MeshStandardMaterial({color:new THREE.Color(0.08,0.072,0.058),roughness:0.82,metalness:0.18});
+
+  // helper: tapered pillar geometry
+  function taperedPillar(wBot,wTop,h,d){
+    const geo=new THREE.BufferGeometry();
+    const hw=wBot/2,twh=wTop/2,hh=h/2,hd=d/2;
+    const verts=new Float32Array([
+      -hw,-hh, hd,  hw,-hh, hd,  twh,hh, hd, -twh,hh, hd,
+      -hw,-hh,-hd,  hw,-hh,-hd,  twh,hh,-hd, -twh,hh,-hd
+    ]);
+    const idx=[0,1,2, 0,2,3, 5,4,7, 5,7,6, 4,0,3, 4,3,7, 1,5,6, 1,6,2, 3,2,6, 3,6,7, 4,5,1, 4,1,0];
+    geo.setAttribute('position',new THREE.BufferAttribute(verts,3));
+    geo.setIndex(idx); geo.computeVertexNormals(); return geo;
+  }
+
+  // ── Left A-pillar ──
+  const lp=new THREE.Mesh(taperedPillar(0.28,0.18,4.5,0.28),darkMat);
+  lp.position.set(-2.05,0.15,-2.2); lp.rotation.z=0.04; lp.rotation.y=-0.12;
+  scene.add(lp);
+  // inner face highlight
+  const lpInner=new THREE.Mesh(new THREE.PlaneGeometry(0.18,4.5),innerMat);
+  lpInner.position.set(-1.93,0.15,-2.08); lpInner.rotation.y=-1.0;
+  scene.add(lpInner);
+
+  // ── Right A-pillar ──
+  const rp=lp.clone(); rp.material=darkMat;
+  rp.position.set(2.05,0.15,-2.2); rp.rotation.z=-0.04; rp.rotation.y=0.12;
+  scene.add(rp);
+  const rpInner=lpInner.clone(); rpInner.material=innerMat;
+  rpInner.position.set(1.93,0.15,-2.08); rpInner.rotation.y=1.0;
+  scene.add(rpInner);
+
+  // ── Glareshield / top brow ──
+  const brow=new THREE.Mesh(new THREE.BoxGeometry(5.8,0.38,0.7),darkMat);
+  brow.position.set(0,1.38,-2.3); brow.rotation.x=-0.12;
+  scene.add(brow);
+  // glareshield face (slightly lighter, angled toward pilot)
+  const browFace=new THREE.Mesh(new THREE.PlaneGeometry(5.8,0.45),innerMat);
+  browFace.position.set(0,1.2,-2.05); browFace.rotation.x=-0.6;
+  scene.add(browFace);
+
+  // ── Center post ──
+  const cp=new THREE.Mesh(taperedPillar(0.14,0.10,3.2,0.22),darkMat);
+  cp.position.set(0,0.25,-2.2);
+  scene.add(cp);
+
+  // ── Panel top edge ──
+  const pEdge=new THREE.Mesh(new THREE.BoxGeometry(5.8,0.18,0.55),darkMat);
+  pEdge.position.set(0,-1.25,-2.28); pEdge.rotation.x=0.38;
+  scene.add(pEdge);
+
+  // ── Dashboard surface (top ~15% of panel, 3D for depth illusion) ──
+  const dashGeo=new THREE.PlaneGeometry(5.8,0.9);
+  const dashMat=new THREE.MeshStandardMaterial({color:new THREE.Color(0.065,0.068,0.075),roughness:0.9,metalness:0.08});
+  const dash=new THREE.Mesh(dashGeo,dashMat);
+  dash.position.set(0,-1.6,-2.35); dash.rotation.x=1.15;
+  scene.add(dash);
+
+  function onResize(){
+    const{W,H}=getLayout();
+    const dpr=DPR();
+    canvas.width=W*dpr; canvas.height=H*dpr;
+    canvas.style.width=W+'px'; canvas.style.height=H+'px';
+    camera.aspect=W/H; camera.updateProjectionMatrix();
+    renderer.setSize(W,H,false);
+  }
+  window.addEventListener('resize',onResize);
+
+  (function animate(){requestAnimationFrame(animate); renderer.render(scene,camera);})();
+})();
+
+/* ── CLOUDS ── */
+(function initClouds(){
+  const cc=document.getElementById('cloudCanvas');
+  const dpr=DPR();
+  function rsz(){const{W,H}=getLayout();cc.width=W*dpr;cc.height=H*dpr;cc.style.width=W+'px';cc.style.height=H+'px';}
+  rsz(); window.addEventListener('resize',rsz);
+  function mkCloud(r,tint){
+    const W=r*7,H=r*4.2,oc=document.createElement('canvas');
+    oc.width=W;oc.height=H; const cx=oc.getContext('2d');
+    cx.filter=`blur(${r*.65}px)`;
+    const g1=cx.createRadialGradient(W/2,H/2,0,W/2,H/2,r*2.4);
+    g1.addColorStop(0,`rgba(${tint},${tint},${tint-8},.32)`);g1.addColorStop(1,'rgba(0,0,0,0)');
+    cx.fillStyle=g1;cx.fillRect(0,0,W,H);
+    cx.filter=`blur(${r*.25}px)`;
+    [[0,0,.92],[r*1.25,-r*.2,.78],[r*-.85,-r*.18,.68],[r*2,-r*.05,.55],[r*-.6,r*.1,.48],[r*2.6,r*.12,.4]].forEach(([dx,dy,s])=>{
+      const pg=cx.createRadialGradient(W/2+dx,H/2+dy,0,W/2+dx,H/2+dy,r*s);
+      const bt=tint-12;
+      pg.addColorStop(0,`rgba(${tint},${tint-2},${bt},.62)`);
+      pg.addColorStop(.65,`rgba(${tint-10},${tint-10},${bt-10},.15)`);
+      pg.addColorStop(1,'rgba(0,0,0,0)');
+      cx.fillStyle=pg;cx.fillRect(0,0,W,H);
+    });
+    cx.filter='none';
+    const hg=cx.createRadialGradient(W/2-r*.28,H/2-r*.32,0,W/2-r*.28,H/2-r*.32,r*.65);
+    hg.addColorStop(0,'rgba(255,250,240,.36)');hg.addColorStop(1,'rgba(0,0,0,0)');
+    cx.fillStyle=hg;cx.fillRect(0,0,W,H);
+    cx.filter=`blur(${r*.16}px)`;
+    const sg=cx.createRadialGradient(W/2,H/2+r*.45,0,W/2,H/2+r*.45,r*1.9);
+    sg.addColorStop(0,'rgba(50,38,18,.28)');sg.addColorStop(1,'rgba(0,0,0,0)');
+    cx.fillStyle=sg;cx.fillRect(0,0,W,H); cx.filter='none';
+    return{canvas:oc,w:W,h:H};
+  }
+  const TMPL=[mkCloud(30,248),mkCloud(52,244),mkCloud(82,240)];
+  const LYRS=[{t:0,sp:12,y:.50,n:7,a:.62},{t:1,sp:22,y:.47,n:5,a:.48},{t:2,sp:38,y:.44,n:4,a:.35}];
+  const clouds=LYRS.map(l=>{const{W,H}=getLayout();return Array.from({length:l.n},()=>({x:Math.random()*W,y:H*l.y+Math.random()*44-22}));});
+  let lt=performance.now();
+  (function animC(ts){
+    requestAnimationFrame(animC);
+    const dt=Math.min((ts-lt)/1000,.05);lt=ts;
+    const{W,H}=getLayout();
+    const ctx=cc.getContext('2d');
+    ctx.clearRect(0,0,cc.width,cc.height);
+    ctx.save(); ctx.scale(dpr,dpr);
+    const horizY=H*.812;
+    ctx.beginPath(); ctx.rect(0,0,W,horizY); ctx.clip();
+    LYRS.forEach((l,li)=>{
+      const cs=clouds[li],tmpl=TMPL[l.t];
+      ctx.globalAlpha=l.a;
+      cs.forEach(c=>{
+        c.x-=l.sp*dt;
+        if(c.x+tmpl.w<-60) c.x=W+80+Math.random()*250;
+        ctx.drawImage(tmpl.canvas,c.x-tmpl.w/2,c.y-tmpl.h/2);
+      });
+    });
+    ctx.globalAlpha=1; ctx.restore();
+  })(performance.now());
+})();
+
+/* ── HUD ── */
+function drawHUD(){
+  const hc=document.getElementById('hudCanvas');
+  const dpr=DPR(),W=hc.width/dpr,H=hc.height/dpr;
+  const cx=W/2,cy=H/2;
+  const ctx=hc.getContext('2d');
+  ctx.clearRect(0,0,hc.width,hc.height);
+  ctx.save(); ctx.scale(dpr,dpr);
+  // bank arc
+  const ar=Math.min(W,H)*.34;
+  ctx.strokeStyle='rgba(190,210,198,.22)'; ctx.lineWidth=1;
+  ctx.beginPath(); ctx.arc(cx,H*.8,ar,Math.PI*1.06,Math.PI*1.94); ctx.stroke();
+  [-60,-45,-30,-20,-10,0,10,20,30,45,60].forEach(d=>{
+    const a=Math.PI*1.5+d*Math.PI/180,len=[0,30,45,60].includes(Math.abs(d))?9:5;
+    const cos=Math.cos(a),sin=Math.sin(a);
+    ctx.beginPath(); ctx.moveTo(cx+ar*cos,H*.8+ar*sin); ctx.lineTo(cx+(ar-len)*cos,H*.8+(ar-len)*sin); ctx.stroke();
+  });
+  // bank pointer
+  ctx.fillStyle='rgba(190,210,198,.5)';
+  ctx.beginPath(); ctx.moveTo(cx,H*.8-ar+4); ctx.lineTo(cx-5,H*.8-ar+13); ctx.lineTo(cx+5,H*.8-ar+13); ctx.fill();
+  // pitch ladder
+  const ppy=H/22;
+  ctx.strokeStyle='rgba(205,220,210,.38)'; ctx.lineWidth=1;
+  ctx.font='9.5px "B612 Mono",monospace'; ctx.fillStyle='rgba(205,220,210,.42)';
+  for(let p=-15;p<=15;p+=5){
+    if(p===0) continue;
+    const y=cy-p*ppy,lw=p%10===0?42:24;
+    ctx.beginPath(); ctx.moveTo(cx-lw,y); ctx.lineTo(cx+lw,y); ctx.stroke();
+    if(p%10===0){ctx.textAlign='left';ctx.fillText(Math.abs(p),cx+lw+4,y+3.5);ctx.textAlign='right';ctx.fillText(Math.abs(p),cx-lw-4,y+3.5);}
+  }
+  // wings
+  ctx.strokeStyle='rgba(215,228,218,.58)'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(cx-58,cy); ctx.lineTo(cx-26,cy); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx-26,cy); ctx.lineTo(cx-26,cy+6); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx+58,cy); ctx.lineTo(cx+26,cy); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx+26,cy); ctx.lineTo(cx+26,cy+6); ctx.stroke();
+  // FPV
+  const fr=9;
+  ctx.strokeStyle='rgba(190,215,200,.7)'; ctx.lineWidth=1.5;
+  ctx.beginPath(); ctx.arc(cx,cy,fr,0,Math.PI*2); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx+fr+2,cy); ctx.lineTo(cx+fr+16,cy); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx-fr-2,cy); ctx.lineTo(cx-fr-16,cy); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx,cy-fr-2); ctx.lineTo(cx,cy-fr-10); ctx.stroke();
+  ctx.restore();
+}
+drawHUD();
+
+/* ── GAUGES ── */
+const GDEFS=[
+  {id:'gASI',lbl:'AIRSPEED',min:0,max:280,green:[70,160],ylw:[160,200],red:[200,280],unit:'KTS',val:()=>SIM.ias},
+  {id:'gATT',lbl:'ATTITUDE',min:-90,max:90,green:[-12,12],ylw:[-30,-12],red:[-90,-30],val:()=>SIM.pitch},
+  {id:'gALT',lbl:'ALTIMETER',min:0,max:55,green:[0,45],ylw:[45,52],red:[52,55],unit:'×1000FT',val:()=>SIM.alt/1000,raw:()=>SIM.alt},
+  {id:'gVSI',lbl:'VERT SPEED',min:-3000,max:3000,green:[-800,800],ylw:[-2000,-800],red:[-3000,-2000],unit:'FPM',val:()=>SIM.vs},
+  {id:'gTC', lbl:'TURN COORD',min:-3,max:3,green:[-1.2,1.2],ylw:[-2,-1.2],red:[-3,-2],val:()=>SIM.bank/20},
+  {id:'gDG', lbl:'HEADING',min:0,max:360,green:[0,360],ylw:[],red:[],val:()=>SIM.hdg,isDG:true}
+];
+
+function initGauges(){
+  const row=document.getElementById('gaugesRow');
+  row.innerHTML='';
+  const{PH}=getLayout();
+  const avH=PH-42-14;
+  const S=Math.min(Math.floor(avH*.85),134);
+  const avW=window.innerWidth-200-32;
+  const Sf=Math.min(S,Math.floor((avW-5*12)/6));
+  const gs=Math.max(Sf,72);
+
+  // flex centering with gap
+  row.style.padding=`12px 16px 0`;
+  row.style.gap=`${Math.floor((avW-6*gs)/(7))}px`;
+
+  GDEFS.forEach(def=>{
+    const w=document.createElement('div'); w.className='gw';
+    const c=document.createElement('canvas'); c.className='gc'; c.id=def.id;
+    c.style.width=gs+'px'; c.style.height=gs+'px';
+    const l=document.createElement('div'); l.className='gl'; l.textContent=def.lbl;
+    w.appendChild(c); w.appendChild(l); row.appendChild(w);
+    renderGauge(def,gs);
+  });
+}
+
+function renderGauge(def,S){
+  const c=document.getElementById(def.id); if(!c)return;
+  const dpr=DPR(); c.width=S*dpr; c.height=S*dpr;
+  const ctx=c.getContext('2d'); ctx.setTransform(dpr,0,0,dpr,0,0);
+  const cx=S/2,cy=S/2,r=S/2-2;
+
+  // ── outer shadow ──
+  const shad=ctx.createRadialGradient(cx,cy,r-1,cx,cy,r+2);
+  shad.addColorStop(0,'rgba(0,0,0,.9)'); shad.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.beginPath(); ctx.arc(cx,cy,r+2,0,Math.PI*2); ctx.fillStyle=shad; ctx.fill();
+
+  // ── chrome bezel (multi-pass) ──
+  // pass 1: base dark warm gray
+  const bz1=ctx.createLinearGradient(cx-r,cy-r,cx+r,cy+r);
+  bz1.addColorStop(0,'#302c24'); bz1.addColorStop(.3,'#1e1a14');
+  bz1.addColorStop(.7,'#161210'); bz1.addColorStop(1,'#282420');
+  ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.fillStyle=bz1; ctx.fill();
+  // pass 2: specular ring
+  const bz2=ctx.createRadialGradient(cx-r*.38,cy-r*.4,r*.12,cx,cy,r);
+  bz2.addColorStop(0,'rgba(200,185,155,.52)'); bz2.addColorStop(.35,'rgba(90,82,68,.14)');
+  bz2.addColorStop(.72,'rgba(28,24,18,.2)'); bz2.addColorStop(.88,'rgba(130,118,95,.28)'); bz2.addColorStop(1,'rgba(60,52,40,.18)');
+  ctx.beginPath(); ctx.arc(cx,cy,r*.98,0,Math.PI*2); ctx.fillStyle=bz2; ctx.fill();
+
+  // ── face ──
+  const face=ctx.createRadialGradient(cx,cy*.88,0,cx,cy,r*.88);
+  face.addColorStop(0,'#161a1e'); face.addColorStop(.55,'#0e1014'); face.addColorStop(1,'#080a0e');
+  ctx.beginPath(); ctx.arc(cx,cy,r*.88,0,Math.PI*2); ctx.fillStyle=face; ctx.fill();
+
+  // ── range arcs ──
+  const sa=Math.PI*.76,sw=Math.PI*1.48;
+  const vaToA=v=>sa+((v-def.min)/(def.max-def.min))*sw;
+  function arc(lo,hi,col,lw){
+    if(lo==null||hi===lo)return;
+    const a1=vaToA(Math.max(lo,def.min)),a2=vaToA(Math.min(hi,def.max));
+    if(a2<=a1)return;
+    ctx.beginPath(); ctx.arc(cx,cy,r*.73,a1,a2);
+    ctx.strokeStyle=col; ctx.lineWidth=lw; ctx.stroke();
+  }
+  if(def.green?.length) arc(def.green[0],def.green[1],'rgba(0,210,130,.62)',3.5);
+  if(def.ylw?.length)   arc(def.ylw[0],def.ylw[1],'rgba(230,195,0,.62)',3.5);
+  if(def.red?.length)   arc(def.red[0],def.red[1],'rgba(210,55,55,.62)',3.5);
+
+  // ── ticks ──
+  for(let i=0;i<=50;i++){
+    const a=sa+(i/50)*sw,major=i%5===0;
+    const ro=r*.8,ri=ro-(major?9:5);
+    const cos=Math.cos(a),sin=Math.sin(a);
+    ctx.beginPath(); ctx.moveTo(cx+ro*cos,cy+ro*sin); ctx.lineTo(cx+ri*cos,cy+ri*sin);
+    ctx.strokeStyle=major?'rgba(235,228,215,.82)':'rgba(185,178,165,.45)';
+    ctx.lineWidth=major?1.5:.8; ctx.stroke();
+  }
+  // major numbers
+  ctx.font=`${Math.max(7,S/14)}px "B612 Mono",monospace`;
+  ctx.fillStyle='rgba(225,218,205,.72)'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  for(let i=0;i<=10;i+=2){
+    const a=sa+(i/10)*sw,rad=r*.62;
+    const v=Math.round(def.min+(def.max-def.min)*i/10);
+    const lbl=def.isDG?['N','E','S','W',''][Math.floor(i/2.5)]||'':String(Math.abs(v));
+    if(lbl) ctx.fillText(lbl,cx+rad*Math.cos(a),cy+rad*Math.sin(a));
+  }
+
+  // ── DG compass rose ──
+  if(def.isDG){
+    ctx.save(); ctx.translate(cx,cy);
+    const hdg=SIM.hdg;
+    ['N','30','60','E','120','150','S','210','240','W','300','330'].forEach((lbl,i)=>{
+      const d=i*30,a=(d-hdg)*Math.PI/180-Math.PI/2;
+      const isMaj=['N','E','S','W'].includes(lbl);
+      const ro=r*.82,ri=ro-(isMaj?11:7);
+      ctx.beginPath(); ctx.moveTo(ro*Math.cos(a),ro*Math.sin(a)); ctx.lineTo(ri*Math.cos(a),ri*Math.sin(a));
+      ctx.strokeStyle=isMaj?'rgba(225,215,195,.75)':'rgba(175,165,145,.45)'; ctx.lineWidth=isMaj?1.5:.8; ctx.stroke();
+      if(isMaj){
+        ctx.font=`bold ${Math.max(8,S/12)}px "B612",sans-serif`;
+        ctx.fillStyle='rgba(225,215,195,.7)'; ctx.textAlign='center'; ctx.textBaseline='middle';
+        const lr=r*.64; ctx.fillText(lbl,lr*Math.cos(a),lr*Math.sin(a));
+      }
+    });
+    ctx.restore();
+  }
+
+  // ── needle ──
+  const rawV=def.val();
+  const needleA=def.isDG?-Math.PI/2:vaToA(Math.max(def.min,Math.min(def.max,rawV)));
+  ctx.save(); ctx.translate(cx,cy); ctx.rotate(needleA);
+  // needle shadow
+  ctx.shadowColor='rgba(0,0,0,.5)'; ctx.shadowBlur=3; ctx.shadowOffsetX=1; ctx.shadowOffsetY=1;
+  // needle body
+  const ng=ctx.createLinearGradient(-2,0,2,0);
+  ng.addColorStop(0,'rgba(200,195,185,.55)'); ng.addColorStop(.5,'rgba(245,240,232,.95)'); ng.addColorStop(1,'rgba(200,195,185,.55)');
+  ctx.beginPath();
+  ctx.moveTo(0,-(r*.82)); ctx.lineTo(2.2,-(r*.22)); ctx.lineTo(2.2,r*.18); ctx.lineTo(0,r*.22); ctx.lineTo(-2.2,r*.18); ctx.lineTo(-2.2,-(r*.22));
+  ctx.closePath(); ctx.fillStyle=ng; ctx.fill();
+  // red tip
+  ctx.shadowColor='rgba(200,50,50,.4)'; ctx.shadowBlur=4;
+  ctx.beginPath();
+  ctx.moveTo(0,-(r*.82)); ctx.lineTo(2.2,-(r*.55)); ctx.lineTo(-2.2,-(r*.55));
+  ctx.closePath(); ctx.fillStyle='#d84040'; ctx.fill();
+  ctx.shadowBlur=0; ctx.shadowOffsetX=0; ctx.shadowOffsetY=0;
+  ctx.restore();
+
+  // ── center pin ──
+  const pin=ctx.createRadialGradient(cx-1,cy-1,0,cx,cy,4.5);
+  pin.addColorStop(0,'#c8c0b0'); pin.addColorStop(.5,'#706858'); pin.addColorStop(1,'#282018');
+  ctx.beginPath(); ctx.arc(cx,cy,4.5,0,Math.PI*2); ctx.fillStyle=pin; ctx.fill();
+
+  // ── digital readout ──
+  const dispV=def.isDG?String(Math.round(SIM.hdg)).padStart(3,'0')+(def.unit||'°'):
+              def.unit==='×1000FT'?(SIM.alt/1000).toFixed(1)+'K':Math.round(rawV).toString()+(def.unit&&!def.isDG?'':' ');
+  ctx.fillStyle='rgba(0,190,138,.7)';
+  ctx.font=`${Math.max(7,S/10)}px "B612 Mono",monospace`;
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillText(def.isDG?String(Math.round(SIM.hdg)).padStart(3,'0')+'°':
+    (def.unit==='×1000FT'?(SIM.alt/1000).toFixed(1)+'K':Math.round(rawV)+(!def.unit?'':'')),cx,cy+r*.44);
+
+  // ── glass highlight ──
+  const gl=ctx.createRadialGradient(cx-r*.22,cy-r*.28,0,cx,cy,r*.88);
+  gl.addColorStop(0,'rgba(255,252,245,.07)'); gl.addColorStop(.5,'rgba(255,250,240,.028)'); gl.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.beginPath(); ctx.arc(cx,cy,r*.88,0,Math.PI*2); ctx.fillStyle=gl; ctx.fill();
+}
+
+/* ── TAPES ── */
+function updateTapes(){
+  document.getElementById('spdVal').textContent=Math.round(SIM.ias);
+  document.getElementById('altVal').textContent='FL'+String(Math.round(SIM.alt/100)).padStart(3,'0');
+  document.getElementById('hdgBox').textContent=Math.round(SIM.hdg)+'°';
+  document.getElementById('hudL').innerHTML=
+    `<span class="hud-lbl">OAT</span>${SIM.oat}°C<br><span class="hud-lbl">TAT</span>${SIM.tat}°C<br><span class="hud-lbl">SAT</span>12`;
+  document.getElementById('hudR').innerHTML=
+    `N1A <span class="hud-lbl"></span>${SIM.n1a.toFixed(1)}%<br>N1B <span class="hud-lbl"></span>${SIM.n1b.toFixed(1)}%<br>FUEL ${Math.round(SIM.fuel).toLocaleString()} LB`;
+}
+
+/* ── PANELS ── */
+const PTITLES={market:'MARKET WATCH',budget:'BUDGET CONTROL',train:'FLIGHT TRAINING',
+  logbk:'DIGITAL LOGBOOK',wxob:'AVIATION WEATHER',memo:'PILOT MEMO',
+  trfc:'LIVE TRAFFIC · OPENSKY',notm:'NOTAMS / TFR',arpt:'AIRPORT INFORMATION',
+  e6b:'E6B CALCULATIONS',crny:'CURRENCY TRACKER',
+  wbal:'N32069 · WEIGHT &amp; BALANCE'};
+let activeP=null;
+function openPanel(id,btn){
+  if(activeP===id){closePanel();return;}
+  // Ensure notebook overlay is closed when another panel opens
+  const nb=document.getElementById('trnNotebook');
+  if(nb) nb.classList.remove('open');
+  activeP=id;
+  document.querySelectorAll('.sk').forEach(b=>b.classList.remove('on'));
+  if(btn) btn.classList.add('on');
+  document.getElementById('dvTitle').textContent=PTITLES[id];
+  document.querySelectorAll('.dv-pg').forEach(p=>p.classList.remove('on'));
+  const pg=document.getElementById('pg-'+id); if(pg) pg.classList.add('on');
+  document.getElementById('dataOv').classList.add('open');
+  if(id==='market'){renderStocks();loadAlertStatus();}
+  if(id==='budget') renderBudget();
+  if(id==='train') renderTraining();
+  if(id==='logbk') renderLogbook();
+  if(id==='trfc') initTraffic();
+  if(id==='notm') initNotam();
+  if(id==='arpt') initAirport();
+  if(id==='crny') renderCurrency();
+  if(id==='memo'){document.getElementById('noteTa').value=CFG.notes||'';}
+}
+function closePanel(){
+  activeP=null;
+  document.querySelectorAll('.sk').forEach(b=>b.classList.remove('on'));
+  document.getElementById('dataOv').classList.remove('open');
+}
+
+/* ── STOCKS ── */
+let sData={};
+function seedP(t){let h=0;for(let c of t)h=(h<<5)-h+c.charCodeAt(0);return 50+Math.abs(h%950);}
+function renderStocks(){
+  const g=document.getElementById('stockGrid');g.innerHTML='';
+  CFG.tickers.slice(0,6).forEach((t,i)=>{
+    const d=sData[t]||{price:seedP(t),chg:((i*17%9)-4)*.85};
+    const up=d.chg>=0;
+    const card=document.createElement('div');card.className='scard';
+    card.innerHTML=`<div class="stick">${t}</div>
+      <div class="sprice">$${d.price.toFixed(2)}</div>
+      <div class="schg ${up?'up':'dn'}">${up?'+':''}${d.chg.toFixed(2)}%</div>
+      <canvas id="sp-${t}" style="display:block;width:100%;height:26px;margin-top:5px"></canvas>`;
+    g.appendChild(card);
+    requestAnimationFrame(()=>drawSpark(t,d.price,up));
+  });
+}
+function drawSpark(t,price,up){
+  const c=document.getElementById('sp-'+t);if(!c)return;
+  const dpr=DPR(),W=c.offsetWidth||100,H=28;
+  c.width=W*dpr;c.height=H*dpr;
+  const ctx=c.getContext('2d');ctx.scale(dpr,dpr);
+  let seed=t.charCodeAt(0)*7;
+  const rnd=()=>{seed=(seed*16807)%2147483647;return seed/2147483647;};
+  const pts=22,vals=[price];
+  for(let i=1;i<pts;i++) vals.push(vals[i-1]*(1+(rnd()-.5)*.025));
+  const mn=Math.min(...vals),mx=Math.max(...vals),rng=mx-mn||1;
+  const col=up?'rgba(0,200,120,.75)':'rgba(210,65,65,.75)';
+  ctx.beginPath();
+  vals.forEach((v,i)=>{const x=i/(pts-1)*W,y=H-(v-mn)/rng*(H-4)-2;i?ctx.lineTo(x,y):ctx.moveTo(x,y);});
+  ctx.strokeStyle=col;ctx.lineWidth=1.2;ctx.stroke();
+  ctx.lineTo(W,H);ctx.lineTo(0,H);ctx.closePath();
+  ctx.fillStyle=up?'rgba(0,200,120,.1)':'rgba(210,65,65,.1)';ctx.fill();
+}
+async function loadStocks(){
+  const key=document.getElementById('apiKey').value.trim();
+  document.getElementById('mktStat').textContent='FETCHING...';
+  if(!key){document.getElementById('mktStat').textContent='DEMO MODE';renderStocks();return;}
+  try{
+    const res=await Promise.all(CFG.tickers.map(async t=>{
+      const r=await fetch(`https://finnhub.io/api/v1/quote?symbol=${t}&token=${key}`);
+      return{t,d:await r.json()};
+    }));
+    res.forEach(({t,d})=>{if(d.c)sData[t]={price:d.c,chg:(d.c-d.pc)/d.pc*100};});
+    document.getElementById('mktStat').textContent='LIVE';
+    CFG.finnhubKey=key;LS.set('cfg',CFG);renderStocks();
+  }catch{document.getElementById('mktStat').textContent='ERROR';}
+}
+
+/* ── ALERTS STATUS (Twilio cron) ── */
+async function loadAlertStatus(){
+  const el=document.getElementById('alertStat');if(!el)return;
+  // Only meaningful when deployed on Vercel; harmless if served from file://.
+  try{
+    const r=await fetch('/api/status',{cache:'no-store'});
+    if(!r.ok)throw new Error('status '+r.status);
+    const j=await r.json();
+    const enabled=j.alertsEnabled;
+    let when='—';
+    if(j.lastCheck?.ts){
+      const d=new Date(j.lastCheck.ts);
+      const p=v=>String(v).padStart(2,'0');
+      when=`${p(d.getUTCHours())}:${p(d.getUTCMinutes())}Z`;
+    }
+    el.textContent=`ALERTS: ${enabled?'ON':'OFF'} · ±${j.threshold}% · LAST ${when}`;
+    el.style.color=enabled?'rgba(0,200,162,.78)':'rgba(220,180,80,.55)';
+  }catch(e){
+    el.textContent='ALERTS: NOT DEPLOYED';
+    el.style.color='rgba(135,148,138,.32)';
+  }
+}
+
+/* ── MARKET NEWS ── */
+function mktTab(t){
+  document.querySelectorAll('#pg-market .tab').forEach(b=>b.classList.remove('on'));
+  document.querySelectorAll('#pg-market .tabpane').forEach(p=>p.classList.remove('on'));
+  document.getElementById('mktTab'+(t==='news'?'N':'P')).classList.add('on');
+  document.getElementById('mktPane-'+t).classList.add('on');
+  if(t==='news') loadNews();
+}
+function demoNews(){
+  return[
+    {h:'Markets close mixed as traders weigh Fed signals',s:'Reuters',u:'https://www.reuters.com/markets/',d:Date.now()/1000-1800,
+     summary:'Major US indices ended the session split, with rate-sensitive sectors leading after fresh commentary from FOMC participants.'},
+    {h:'Treasury yields steady ahead of inflation print',s:'Bloomberg',u:'https://www.bloomberg.com/markets/',d:Date.now()/1000-3600,
+     summary:'10-year yields hovered near recent ranges as investors awaited the next CPI release for direction on the policy path.'},
+    {h:'Oil edges higher on supply concerns',s:'CNBC',u:'https://www.cnbc.com/markets/',d:Date.now()/1000-7200,
+     summary:'Crude futures advanced after reports of tightening exports, while equity energy names mostly tracked the move higher.'}
+  ];
+}
+async function loadNews(){
+  const stat=document.getElementById('newsStat');
+  const list=document.getElementById('newsList');
+  const key=(document.getElementById('apiKey').value||CFG.finnhubKey||'').trim();
+  if(!key){
+    stat.textContent='DEMO · ADD FINNHUB KEY ABOVE FOR LIVE';stat.style.color='rgba(220,180,80,.78)';
+    renderNews(demoNews(),true);return;
+  }
+  stat.textContent='FETCHING...';stat.style.color='rgba(220,180,80,.78)';
+  try{
+    const r=await fetch(`https://finnhub.io/api/v1/news?category=general&token=${key}`);
+    const arr=await r.json();
+    if(!Array.isArray(arr)||!arr.length){stat.textContent='NO ARTICLES';renderNews(demoNews(),true);return;}
+    // top 3 by datetime desc
+    const top=arr.slice().sort((a,b)=>(b.datetime||0)-(a.datetime||0)).slice(0,3)
+      .map(a=>({h:a.headline,s:a.source,u:a.url,d:a.datetime,summary:a.summary||''}));
+    stat.textContent='LIVE';stat.style.color='rgba(0,195,135,.78)';
+    renderNews(top,false);
+  }catch(e){
+    stat.textContent='ERROR · USING DEMO';stat.style.color='rgba(210,70,70,.8)';
+    renderNews(demoNews(),true);
+  }
+}
+function renderNews(items,demo){
+  const list=document.getElementById('newsList');list.innerHTML='';
+  items.forEach(a=>{
+    const ts=a.d?new Date(a.d*1000):null;
+    const ago=ts?(()=>{const m=(Date.now()-ts)/60000;
+      return m<60?`${Math.round(m)}m ago`:m<1440?`${Math.round(m/60)}h ago`:`${Math.round(m/1440)}d ago`;})():'';
+    const card=document.createElement('div');card.className='nws';
+    card.innerHTML=`
+      <div class="nws-meta"><span class="src">${a.s||'—'}${demo?' · DEMO':''}</span><span>${ago}</span></div>
+      <div class="nws-ttl">${a.h}</div>
+      ${a.summary?`<div class="nws-sum">${a.summary.slice(0,220)}${a.summary.length>220?'…':''}</div>`:''}
+      <a class="nws-link" href="${a.u}" target="_blank" rel="noopener">READ ARTICLE →</a>`;
+    list.appendChild(card);
+  });
+}
+
+/* ── BUDGET ── */
+function addInc(){const l=document.getElementById('iLbl').value.trim(),a=parseFloat(document.getElementById('iAmt').value)||0;if(!l||!a)return;CFG.income.push({l,a});LS.set('cfg',CFG);document.getElementById('iLbl').value='';document.getElementById('iAmt').value='';renderBudget();}
+function addExp(){const l=document.getElementById('eLbl').value.trim(),a=parseFloat(document.getElementById('eAmt').value)||0;if(!l||!a)return;CFG.expenses.push({l,a});LS.set('cfg',CFG);document.getElementById('eLbl').value='';document.getElementById('eAmt').value='';renderBudget();}
+function renderBudget(){
+  const inc=CFG.income||[],exp=CFG.expenses||[];
+  function rows(items,cont,isI){
+    cont.innerHTML='';
+    const mx=Math.max(...items.map(x=>x.a),1);
+    items.forEach(it=>{
+      const d=document.createElement('div');d.style.marginBottom='8px';
+      const col=isI?'rgba(0,200,120,.55)':'rgba(220,175,0,.55)';
+      d.innerHTML=`<div style="display:flex;justify-content:space-between;margin-bottom:3px">
+        <span class="lbl">${it.l}</span><span class="val" style="font-size:10px;color:rgba(195,210,200,.65)">$${it.a.toLocaleString()}</span></div>
+        <div class="bbar"><div class="bfill" style="width:${it.a/mx*100}%;background:${col}"></div></div>`;
+      cont.appendChild(d);
+    });
+  }
+  rows(inc,document.getElementById('incRows'),true);
+  rows(exp,document.getElementById('expRows'),false);
+  const ti=inc.reduce((s,x)=>s+x.a,0),te=exp.reduce((s,x)=>s+x.a,0),ns=ti-te;
+  document.getElementById('tInc').textContent='$'+ti.toLocaleString();
+  document.getElementById('tExp').textContent='$'+te.toLocaleString();
+  const ne=document.getElementById('tNet');ne.textContent='$'+ns.toLocaleString();
+  ne.className='val lg '+(ns>=0?'grn':'red');
+  // mini bar chart
+  const c=document.getElementById('budgC');
+  const dpr=DPR(),W=c.offsetWidth||400,H=110;
+  c.width=W*dpr;c.height=H*dpr;const ctx=c.getContext('2d');ctx.scale(dpr,dpr);ctx.clearRect(0,0,W,H);
+  const all=[...inc.map(x=>({...x,t:'i'})),...exp.map(x=>({...x,t:'e'}))];if(!all.length)return;
+  const mx2=Math.max(...all.map(x=>x.a),1),bw=Math.min(28,(W-20)/all.length*.7);
+  all.forEach((it,i)=>{
+    const x=20+(i+.5)*(W-20)/all.length,bh=(it.a/mx2)*(H-28),y=H-bh-18;
+    ctx.fillStyle=it.t==='i'?'rgba(0,200,120,.5)':'rgba(220,175,0,.5)';
+    ctx.fillRect(x-bw/2,y,bw,bh);
+    ctx.fillStyle='rgba(130,148,136,.38)';ctx.font='5.5px "B612",sans-serif';ctx.textAlign='center';
+    ctx.fillText(it.l.slice(0,5).toUpperCase(),x,H-5);
+  });
+}
+
+/* ── TRAINING NOTEBOOK ──
+   Persistent training tracker with stages, dates, hours, instructor, exam scores,
+   file attachments (localStorage dataURL), milestones, and per-stage notes.
+   Two tracks: CFI and Bizjet/Type Rating. */
+const TRN_LS_KEY='skycommand-training-v1';
+const TRN_MAX_FILE_BYTES=2*1024*1024; // ~2MB warning threshold
+
+// Field types: chk (checkbox only), date, hours, instr (instructor), score, result (PASS/FAIL/IP)
+const TRN_TRACKS={
+  cfi:{
+    label:'CFI · Certified Flight Instructor',
+    timeline:['Phase 1','Phase 2','Stage Check','Checkride'],
+    stages:[
+      {id:'p1',phase:0,name:'Phase 1 — Prerequisites & Foundation',steps:[
+        {id:'cpl',label:'Commercial Pilot Certificate held',f:['date']},
+        {id:'ir',label:'Instrument Rating held',f:['date']},
+        {id:'foi',label:'FOI (Fundamentals of Instructing) written passed',f:['date','score']},
+        {id:'cfia-w',label:'CFI airplane written (FIA) passed',f:['date','score']},
+        {id:'spin',label:'Spin training endorsement received',f:['date','instr']},
+        {id:'med',label:'Medical certificate current',f:['date']}
+      ]},
+      {id:'p2',phase:1,name:'Phase 2 — Ground & Right-Seat Flight Training',steps:[
+        {id:'lp',label:'Lesson plans portfolio complete',f:['date','instr']},
+        {id:'fund',label:'Fundamentals of teaching demonstration',f:['date','instr','hours']},
+        {id:'pre-solo',label:'Pre-solo knowledge instruction blocks',f:['date','hours','instr']},
+        {id:'maneuvers',label:'Maneuvers from right seat to PTS standard',f:['date','hours','instr']},
+        {id:'xcprep',label:'Cross-country instruction module',f:['date','hours','instr']},
+        {id:'emerg',label:'Emergency procedures from right seat',f:['date','hours','instr']}
+      ]},
+      {id:'sc',phase:2,name:'Stage Check — Instructor Readiness',steps:[
+        {id:'sc1',label:'Mock oral exam',f:['date','instr','result']},
+        {id:'sc2',label:'Mock flight check (right seat)',f:['date','instr','result']},
+        {id:'sign',label:'CFI applicant endorsement signed',f:['date','instr']}
+      ]},
+      {id:'cr',phase:3,name:'Checkride — CFI Initial Practical',steps:[
+        {id:'oral',label:'Oral examination',f:['date','instr','result']},
+        {id:'flt',label:'Flight portion (right seat)',f:['date','instr','hours','result']},
+        {id:'iss',label:'Temporary CFI certificate issued',f:['date']}
+      ]}
+    ],
+    milestones:[
+      {id:'foi-pass',name:'FOI Written',ico:'★',req:s=>s.foi?.score||(s.foi?.done&&s.foi?.date)},
+      {id:'fia-pass',name:'FIA Written',ico:'★',req:s=>s['cfia-w']?.score||(s['cfia-w']?.done&&s['cfia-w']?.date)},
+      {id:'spin-end',name:'Spin Endorsement',ico:'↻',req:s=>s.spin?.done},
+      {id:'right-seat',name:'Right-Seat Solo',ico:'✈',req:s=>s.maneuvers?.hours&&parseFloat(s.maneuvers.hours)>0},
+      {id:'sc-pass',name:'Stage Check',ico:'⬢',req:s=>s.sc1?.result==='PASS'&&s.sc2?.result==='PASS'},
+      {id:'oral-pass',name:'Oral Passed',ico:'◆',req:s=>s.oral?.result==='PASS'},
+      {id:'crpass',name:'Checkride',ico:'✸',req:s=>s.flt?.result==='PASS'},
+      {id:'cert',name:'CFI Issued',ico:'⌘',req:s=>s.iss?.done&&s.iss?.date}
+    ]
+  },
+  bizjet:{
+    label:'Bizjet · Type Rating',
+    timeline:['Ground School','Sim Training','Stage Check','Type Ride'],
+    stages:[
+      {id:'p1',phase:0,name:'Phase 1 — Initial Ground School',steps:[
+        {id:'sys',label:'Aircraft systems module complete',f:['date','hours','instr']},
+        {id:'lim',label:'Limitations memorized & quizzed',f:['date','score']},
+        {id:'perf',label:'Performance & weight/balance',f:['date','hours','instr']},
+        {id:'reg',label:'Regulatory & ops specs review',f:['date','hours','instr']},
+        {id:'wrt',label:'Type rating written exam passed',f:['date','score']}
+      ]},
+      {id:'p2',phase:1,name:'Phase 2 — Simulator Training',steps:[
+        {id:'sim1',label:'Sim block 1 — Normal procedures',f:['date','hours','instr']},
+        {id:'sim2',label:'Sim block 2 — Abnormals & systems failures',f:['date','hours','instr']},
+        {id:'v1',label:'V1 cut / engine-out demonstrated',f:['date','instr','result']},
+        {id:'rto',label:'Rejected takeoff demonstrated',f:['date','instr','result']},
+        {id:'app',label:'Approaches to mins (CAT II/III if applicable)',f:['date','hours','instr']},
+        {id:'lofts',label:'LOFT scenarios complete',f:['date','hours','instr']}
+      ]},
+      {id:'sc',phase:2,name:'Stage Check — Type Ride Prep',steps:[
+        {id:'mockoral',label:'Mock oral examination',f:['date','instr','result']},
+        {id:'mocksim',label:'Mock check ride in sim',f:['date','instr','hours','result']},
+        {id:'sign',label:'Examiner endorsement received',f:['date','instr']}
+      ]},
+      {id:'cr',phase:3,name:'Checkride — Type Rating Practical',steps:[
+        {id:'oral',label:'Oral examination',f:['date','instr','result']},
+        {id:'sim',label:'Sim practical / type ride',f:['date','instr','hours','result']},
+        {id:'tr',label:'Type rating issued (added to certificate)',f:['date']}
+      ]}
+    ],
+    milestones:[
+      {id:'sys-done',name:'Systems Mastered',ico:'⚙',req:s=>s.sys?.done&&s.sys?.hours},
+      {id:'wrt-pass',name:'Type Written',ico:'★',req:s=>s.wrt?.score||(s.wrt?.done&&s.wrt?.date)},
+      {id:'first-sim',name:'First Sim',ico:'▶',req:s=>s.sim1?.hours&&parseFloat(s.sim1.hours)>0},
+      {id:'v1-cut',name:'V1 Cut',ico:'⚡',req:s=>s.v1?.result==='PASS'},
+      {id:'sc-pass',name:'Stage Check',ico:'⬢',req:s=>s.mockoral?.result==='PASS'&&s.mocksim?.result==='PASS'},
+      {id:'oral-pass',name:'Oral Passed',ico:'◆',req:s=>s.oral?.result==='PASS'},
+      {id:'type-pass',name:'Type Ride',ico:'✸',req:s=>s.sim?.result==='PASS'},
+      {id:'tr-iss',name:'Type Rating Issued',ico:'⌘',req:s=>s.tr?.done&&s.tr?.date}
+    ]
+  }
+};
+
+let TRN=loadTraining();
+let TRN_CUR='cfi';
+
+function loadTraining(){
+  let d={};
+  try{const v=localStorage.getItem(TRN_LS_KEY);if(v)d=JSON.parse(v);}catch(e){}
+  // Ensure shape
+  Object.keys(TRN_TRACKS).forEach(tk=>{
+    d[tk]=d[tk]||{};
+    d[tk].steps=d[tk].steps||{};   // keyed by stepId → {done,date,hours,instr,score,result}
+    d[tk].notes=d[tk].notes||{};   // keyed by stageId → string
+    d[tk].files=d[tk].files||{};   // keyed by stageId → [{name,type,size,dataURL}]
+    d[tk].open=d[tk].open||{};     // keyed by stageId → bool
+  });
+  return d;
+}
+function saveTraining(){
+  try{localStorage.setItem(TRN_LS_KEY,JSON.stringify(TRN));}
+  catch(e){alert('TRAINING DATA TOO LARGE FOR LOCALSTORAGE.\nTry removing a large attachment.');}
+}
+
+function openTrainingNotebook(btn){
+  // Close any open data overlay first
+  if(activeP){closePanel();}
+  document.querySelectorAll('.sk').forEach(b=>b.classList.remove('on'));
+  if(btn) btn.classList.add('on');
+  document.getElementById('trnNotebook').classList.add('open');
+  renderTrainingNotebook();
+}
+function closeTrainingNotebook(){
+  document.querySelectorAll('.sk').forEach(b=>b.classList.remove('on'));
+  document.getElementById('trnNotebook').classList.remove('open');
+}
+function trnTrack(tk){
+  TRN_CUR=tk;
+  document.querySelectorAll('#trnNotebook .sk-tab').forEach(b=>b.classList.remove('on'));
+  document.getElementById('trnBtn-'+tk).classList.add('on');
+  document.querySelectorAll('#trnNotebook .trn-track').forEach(p=>p.classList.remove('on'));
+  document.getElementById('trnTrack-'+tk).classList.add('on');
+  renderTrainingNotebook();
+}
+
+function trnEsc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+
+function trnIsStepDone(track,step){
+  const r=TRN[track].steps[step.id]||{};
+  if(r.done) return true;
+  // Auto-mark done if a result is PASS
+  if(step.f.includes('result')&&r.result==='PASS') return true;
+  return false;
+}
+function trnStagePct(track,stage){
+  const total=stage.steps.length;
+  const done=stage.steps.filter(s=>trnIsStepDone(track,s)).length;
+  return total?Math.round(done/total*100):0;
+}
+function trnTrackPct(track){
+  const all=TRN_TRACKS[track].stages.flatMap(s=>s.steps);
+  const done=all.filter(s=>trnIsStepDone(track,s)).length;
+  return all.length?Math.round(done/all.length*100):0;
+}
+function trnCurrentPhase(track){
+  const stages=TRN_TRACKS[track].stages;
+  for(let i=0;i<stages.length;i++){
+    if(trnStagePct(track,stages[i])<100) return stages[i].phase;
+  }
+  return stages[stages.length-1].phase;
+}
+
+function renderTrainingNotebook(){
+  const tk=TRN_CUR,def=TRN_TRACKS[tk],host=document.getElementById('trnTrack-'+tk);
+  if(!host) return;
+  host.innerHTML='';
+
+  // ── TIMELINE + PCT ──
+  const pct=trnTrackPct(tk);
+  const curPhase=trnCurrentPhase(tk);
+  const tl=document.createElement('div');tl.className='trn-timeline';
+  let stopsHTML='';
+  def.timeline.forEach((label,i)=>{
+    const cls=i<curPhase?'done':(i===curPhase?'now':'');
+    stopsHTML+=`<div class="trn-tl-stop">
+      <div class="trn-tl-dot ${cls}"></div>
+      <div class="trn-tl-lbl ${cls}">${trnEsc(label)}</div>
+    </div>`;
+  });
+  tl.innerHTML=`
+    <div class="trn-pct-row">
+      <div>
+        <div class="trn-pct-big">${pct}<span style="font-size:12px;color:rgba(140,158,142,.5);letter-spacing:.06em"> %</span></div>
+        <div class="trn-pct-sub">${trnEsc(def.label)} · OVERALL</div>
+      </div>
+      <div style="text-align:right">
+        <div class="trn-pct-sub" style="color:rgba(220,180,80,.7)">YOU ARE HERE</div>
+        <div style="font-family:'B612 Mono',monospace;font-size:11px;color:rgba(220,180,80,.85);letter-spacing:.04em;margin-top:3px">${trnEsc(def.timeline[curPhase])}</div>
+      </div>
+    </div>
+    <div class="trn-tl-bar"><div class="trn-tl-fill" style="width:${pct}%"></div></div>
+    <div class="trn-tl-stops">${stopsHTML}</div>`;
+  host.appendChild(tl);
+
+  // ── STAGES ──
+  def.stages.forEach(stage=>{
+    const sPct=trnStagePct(tk,stage);
+    const isOpen=!!TRN[tk].open[stage.id];
+    const isDone=sPct===100;
+    const card=document.createElement('div');
+    card.className='trn-stage'+(isOpen?' open':'')+(isDone?' done':'');
+
+    // Header
+    const hdr=document.createElement('div');hdr.className='trn-stage-hdr';
+    hdr.innerHTML=`<span class="sn">${(stage.phase+1).toString().padStart(2,'0')}.</span>
+      <span class="st">${trnEsc(stage.name)}</span>
+      <span class="sp">${sPct}%</span><span class="sx">▶</span>`;
+    hdr.onclick=()=>{TRN[tk].open[stage.id]=!TRN[tk].open[stage.id];saveTraining();renderTrainingNotebook();};
+    card.appendChild(hdr);
+
+    // Body
+    const body=document.createElement('div');body.className='trn-stage-body';
+
+    // Steps
+    stage.steps.forEach(step=>{
+      const rec=TRN[tk].steps[step.id]||{};
+      const done=trnIsStepDone(tk,step);
+      const stepEl=document.createElement('div');stepEl.className='trn-step';
+
+      // Top row (checkbox + label)
+      const top=document.createElement('div');top.className='trn-step-top';
+      top.innerHTML=`<div class="cbox ${done?'chk':''}" data-step="${trnEsc(step.id)}">${done?'<span class="ck">✓</span>':''}</div>
+        <span class="clbl ${done?'done':''}">${trnEsc(step.label)}</span>`;
+      top.querySelector('.cbox').onclick=()=>{
+        const r=TRN[tk].steps[step.id]||{};
+        r.done=!r.done;
+        TRN[tk].steps[step.id]=r;
+        saveTraining();renderTrainingNotebook();
+      };
+      stepEl.appendChild(top);
+
+      // Fields
+      if(step.f.length){
+        const fields=document.createElement('div');fields.className='trn-fields';
+        step.f.forEach(fk=>{
+          const fdiv=document.createElement('div');fdiv.className='trn-fld';
+          let lbl=fk,inp;
+          if(fk==='date'){lbl='DATE';inp=`<input type="date" data-fk="date" value="${trnEsc(rec.date||'')}">`;}
+          else if(fk==='hours'){lbl='HOURS';inp=`<input type="number" step="0.1" placeholder="0.0" data-fk="hours" value="${trnEsc(rec.hours||'')}">`;}
+          else if(fk==='instr'){lbl='INSTRUCTOR';inp=`<input type="text" placeholder="NAME" data-fk="instr" value="${trnEsc(rec.instr||'')}">`;}
+          else if(fk==='score'){lbl='EXAM SCORE';inp=`<input type="text" placeholder="—" data-fk="score" value="${trnEsc(rec.score||'')}">`;}
+          else if(fk==='result'){lbl='RESULT';
+            const v=rec.result||'';
+            inp=`<select data-fk="result">
+              <option value=""${v===''?' selected':''}>—</option>
+              <option value="IP"${v==='IP'?' selected':''}>IN PROGRESS</option>
+              <option value="PASS"${v==='PASS'?' selected':''}>PASS</option>
+              <option value="FAIL"${v==='FAIL'?' selected':''}>FAIL</option>
+            </select>`;
+          }
+          fdiv.innerHTML=`<label>${lbl}</label>${inp}`;
+          const ctl=fdiv.querySelector('input,select');
+          ctl.onchange=e=>{
+            const r=TRN[tk].steps[step.id]||{};
+            r[fk]=e.target.value;
+            TRN[tk].steps[step.id]=r;
+            saveTraining();renderTrainingNotebook();
+          };
+          fields.appendChild(fdiv);
+        });
+        stepEl.appendChild(fields);
+      }
+      body.appendChild(stepEl);
+    });
+
+    // FILES
+    const filesWrap=document.createElement('div');filesWrap.className='trn-files';
+    filesWrap.innerHTML=`<div class="trn-files-row">
+      <span class="lbl" style="font-size:7px;color:rgba(220,180,80,.55)">CERTIFICATES · ENDORSEMENTS · PHOTOS</span>
+      <input type="file" id="trnFile-${trnEsc(tk)}-${trnEsc(stage.id)}" accept="image/*,.pdf,.jpg,.jpeg,.png" style="display:none">
+      <button class="btn" onclick="document.getElementById('trnFile-${trnEsc(tk)}-${trnEsc(stage.id)}').click()">+ ATTACH</button>
+    </div>`;
+    body.appendChild(filesWrap);
+
+    // Thumbnails
+    const thumbs=document.createElement('div');thumbs.className='trn-thumbs';
+    const fileList=TRN[tk].files[stage.id]||[];
+    fileList.forEach((f,idx)=>{
+      const th=document.createElement('div');th.className='trn-thumb';
+      const isImg=(f.type||'').startsWith('image/');
+      th.innerHTML=`${isImg?`<img src="${f.dataURL}" alt="${trnEsc(f.name)}">`:`<div class="doc">PDF</div>`}
+        <div class="nm" title="${trnEsc(f.name)}">${trnEsc(f.name)}</div>
+        <div class="rm" title="REMOVE">×</div>`;
+      th.querySelector('.rm').onclick=ev=>{
+        ev.stopPropagation();
+        TRN[tk].files[stage.id].splice(idx,1);saveTraining();renderTrainingNotebook();
+      };
+      if(!isImg && f.dataURL){
+        th.style.cursor='pointer';
+        th.onclick=()=>window.open(f.dataURL,'_blank');
+      }
+      thumbs.appendChild(th);
+    });
+    body.appendChild(thumbs);
+
+    // Notes
+    const noteWrap=document.createElement('div');noteWrap.className='trn-stage-notes';
+    noteWrap.innerHTML=`<label class="lbl" style="display:block;margin-bottom:4px;font-size:7px;color:rgba(220,180,80,.55)">STAGE NOTES</label>
+      <textarea data-stage="${trnEsc(stage.id)}" placeholder="LESSON DEBRIEFS, INSTRUCTOR FEEDBACK, AREAS TO REVIEW...">${trnEsc(TRN[tk].notes[stage.id]||'')}</textarea>`;
+    const ta=noteWrap.querySelector('textarea');
+    ta.oninput=e=>{TRN[tk].notes[stage.id]=e.target.value;saveTraining();};
+    body.appendChild(noteWrap);
+
+    card.appendChild(body);
+    host.appendChild(card);
+
+    // Wire file input AFTER element is in DOM
+    const fInp=document.getElementById('trnFile-'+tk+'-'+stage.id);
+    if(fInp){
+      fInp.onchange=ev=>{
+        const file=ev.target.files[0];if(!file)return;
+        if(file.size>TRN_MAX_FILE_BYTES){
+          if(!confirm(`"${file.name}" is ${(file.size/1024/1024).toFixed(1)} MB.\n`+
+            `localStorage is size-limited and large files may be rejected.\n\n`+
+            `Attach anyway? (Cancel to skip — you can keep the file outside the dashboard.)`)){
+            ev.target.value='';return;
+          }
+        }
+        const r=new FileReader();
+        r.onload=e2=>{
+          TRN[tk].files[stage.id]=TRN[tk].files[stage.id]||[];
+          TRN[tk].files[stage.id].push({name:file.name,type:file.type,size:file.size,dataURL:e2.target.result});
+          saveTraining();renderTrainingNotebook();
+        };
+        r.readAsDataURL(file);
+        ev.target.value='';
+      };
+    }
+  });
+
+  // ── MILESTONES ──
+  const mileSec=document.createElement('div');
+  mileSec.innerHTML=`<div class="sec" style="margin-top:18px">Milestones Unlocked</div>`;
+  host.appendChild(mileSec);
+  const grid=document.createElement('div');grid.className='trn-mile-grid';
+  def.milestones.forEach(m=>{
+    let unl=false;try{unl=!!m.req(TRN[tk].steps);}catch(e){unl=false;}
+    // Try to surface a meaningful date for the milestone if present
+    let dateStr='';
+    if(unl){
+      const cands=def.stages.flatMap(s=>s.steps).filter(s=>{
+        try{return m.req({[s.id]:TRN[tk].steps[s.id]||{}});}catch(e){return false;}
+      });
+      const dates=cands.map(s=>TRN[tk].steps[s.id]?.date).filter(Boolean).sort();
+      if(dates.length) dateStr=dates[dates.length-1];
+    }
+    const el=document.createElement('div');el.className='trn-mile'+(unl?' unl':'');
+    el.innerHTML=`<div class="ico">${trnEsc(m.ico)}</div>
+      <div class="trn-mile-flex">
+        <div class="mname">${trnEsc(m.name)}</div>
+        ${dateStr?`<div class="mdate">${trnEsc(dateStr)}</div>`:(unl?'':'<div class="mdate">— LOCKED</div>')}
+      </div>`;
+    grid.appendChild(el);
+  });
+  host.appendChild(grid);
+}
+// Backward-compat shim — older init code calls renderTraining()
+function renderTraining(){/* notebook is rendered on demand */}
+
+/* ── LOGBOOK ── */
+function addLog(){
+  const e={date:document.getElementById('lgD').value||new Date().toLocaleDateString('en-US',{month:'2-digit',day:'2-digit',year:'2-digit'}),
+    ac:document.getElementById('lgA').value.toUpperCase(),from:document.getElementById('lgF').value.toUpperCase(),
+    to:document.getElementById('lgT').value.toUpperCase(),hrs:parseFloat(document.getElementById('lgH').value)||0,
+    rem:document.getElementById('lgR').value};
+  CFG.logbook=CFG.logbook||[];CFG.logbook.unshift(e);LS.set('cfg',CFG);
+  ['lgD','lgA','lgF','lgT','lgH','lgR'].forEach(id=>document.getElementById(id).value='');
+  renderLogbook();
+}
+function renderLogbook(){
+  const body=document.getElementById('logBody');body.innerHTML='';
+  (CFG.logbook||[]).forEach(e=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${e.date}</td><td>${e.ac}</td><td>${e.from}</td><td>${e.to}</td><td>${e.hrs.toFixed(1)}</td><td>${e.rem}</td>`;
+    body.appendChild(tr);
+  });
+  document.getElementById('totHrs').textContent=((CFG.logbook||[]).reduce((s,e)=>s+e.hrs,0)).toFixed(1)+' HRS';
+}
+
+/* ── WEATHER (aviationweather.gov) ── */
+async function fetchWx(){
+  const icao=document.getElementById('wxIcao').value.trim().toUpperCase();
+  if(!icao)return;
+  const stat=document.getElementById('wxStat');
+  stat.textContent='FETCHING...';stat.style.color='rgba(200,175,70,.8)';
+  try{
+    const[mr,tr]=await Promise.all([
+      fetch(`https://aviationweather.gov/api/data/metar?ids=${icao}&format=json`),
+      fetch(`https://aviationweather.gov/api/data/taf?ids=${icao}&format=json`)
+    ]);
+    const md=await mr.json(),td=await tr.json();
+    stat.textContent='RECEIVED';stat.style.color='rgba(0,195,135,.8)';
+    CFG.homeAirport=icao;LS.set('cfg',CFG);
+    renderWx(md,td,icao);
+  }catch(e){
+    stat.textContent='CORS/NETWORK ERROR';stat.style.color='rgba(210,70,70,.8)';
+    document.getElementById('wxDisp').innerHTML=`<div style="color:rgba(210,70,70,.4);font-family:'B612',sans-serif;font-size:8px;letter-spacing:.14em;text-transform:uppercase;margin-top:14px">
+      Unable to reach aviationweather.gov.<br>Open via a web server (VS Code Live Server, Python http.server) to bypass CORS restrictions on file:// URLs.</div>`;
+  }
+}
+function flightCat(m){
+  const v=parseFloat(m.visib||'10'),ceil=(m.clouds||[]).find(c=>['BKN','OVC','VV'].includes(c.cover));
+  const f=ceil?ceil.base:9999;
+  if(v>=5&&f>=3000)return['VFR','#38d882'];if(v>=3&&f>=1000)return['MVFR','#00ccec'];
+  if(v>=1&&f>=500)return['IFR','#e04040'];return['LIFR','#e040e0'];
+}
+function renderWx(data,tafData,icao){
+  const disp=document.getElementById('wxDisp');
+  if(!data?.length){disp.innerHTML=`<div style="color:rgba(180,140,75,.45);font-family:'B612',sans-serif;font-size:8px;letter-spacing:.14em;text-transform:uppercase;margin-top:14px">NO METAR FOR ${icao}</div>`;return;}
+  const m=data[0],[cat,catCol]=flightCat(m);
+  const clouds=(m.clouds||[]).map(c=>`${c.cover}@${c.base}FT`).join('  ')||'SKY CLR';
+  disp.innerHTML=`
+    <div class="mraw">${m.rawOb||'No raw METAR'}</div>
+    <div class="g3" style="gap:10px;margin-bottom:12px">
+      <div class="wblk"><div class="wbig">${String(m.wdir||0).padStart(3,'0')}°</div>
+        <div class="wsub">WIND DIR</div>
+        <div style="font-family:'B612 Mono',monospace;font-size:10.5px;color:rgba(190,205,194,.58);margin-top:5px">${m.wspd||0} KTS${m.wgst?' G'+m.wgst+' KTS':''}</div></div>
+      <div class="wblk"><div class="wbig">${m.visib||'—'}</div>
+        <div class="wsub">VISIBILITY SM</div>
+        <div style="font-family:'B612 Mono',monospace;font-size:11px;color:${catCol};margin-top:5px;letter-spacing:.06em">${cat}</div></div>
+      <div class="wblk"><div class="wbig">${m.altim?.toFixed(2)||'—'}</div>
+        <div class="wsub">ALTIMETER inHg</div>
+        <div style="font-family:'B612 Mono',monospace;font-size:10px;color:rgba(190,205,194,.58);margin-top:5px">${m.slp?m.slp.toFixed(0)+' mb':''}</div></div>
+    </div>
+    <div class="g2" style="gap:10px;margin-bottom:12px">
+      <div class="wblk">
+        <div class="crow"><span class="lbl">TEMP</span><span class="val">${m.temp!=null?m.temp+'°C':'—'}</span><span style="font-size:8.5px;color:rgba(95,120,103,.38);margin-left:4px">${m.temp!=null?'('+((m.temp*9/5)+32).toFixed(0)+'°F)':''}</span></div>
+        <div class="crow"><span class="lbl">DEWPT</span><span class="val">${m.dewp!=null?m.dewp+'°C':'—'}</span></div>
+        <div class="crow"><span class="lbl">CLOUDS</span><span class="val" style="font-size:9.5px">${clouds}</span></div>
+        ${m.wxString?`<div class="crow"><span class="lbl">WX</span><span class="val amb">${m.wxString}</span></div>`:''}
+      </div>
+      <div class="wblk">
+        <div class="crow"><span class="lbl">STATION</span><span class="val cyn">${icao}</span></div>
+        <div class="crow"><span class="lbl">NAME</span><span class="val" style="font-size:9px">${m.name||'—'}</span></div>
+        <div class="crow"><span class="lbl">OBS</span><span class="val" style="font-size:8px;color:rgba(150,168,155,.45)">${m.obsTime?new Date(m.obsTime*1000).toUTCString().replace('GMT','Z'):'—'}</span></div>
+      </div>
+    </div>
+    ${tafData?.[0]?.rawTAF?`<div class="sec">TAF</div><div class="mraw">${tafData[0].rawTAF}</div>`:''}
+  `;
+}
+
+/* ── TRAFFIC (OpenSky) ── */
+let tfData={list:null,center:null,range:null};
+async function fetchTraffic(){
+  const icao=(document.getElementById('trIcao').value||CFG.homeAirport||'KGMU').toUpperCase();
+  const range=Math.max(5,Math.min(150,parseFloat(document.getElementById('trRng').value)||40));
+  const stat=document.getElementById('trStat');
+  stat.textContent='LOOKUP COORDS...';stat.style.color='rgba(220,180,80,.78)';
+  let lat,lon;
+  // Try aviationweather.gov airport endpoint for coords (CORS-enabled)
+  try{
+    const r=await fetch(`https://aviationweather.gov/api/data/airport?ids=${icao}&format=json`);
+    const arr=await r.json();
+    if(!arr?.[0]||arr[0].lat==null){throw new Error('no airport');}
+    lat=parseFloat(arr[0].lat);lon=parseFloat(arr[0].lon);
+  }catch(e){
+    stat.textContent='AIRPORT NOT FOUND';stat.style.color='rgba(210,70,70,.8)';return;
+  }
+  const dLat=range/60,dLon=range/(60*Math.cos(lat*Math.PI/180));
+  const url=`https://opensky-network.org/api/states/all?lamin=${(lat-dLat).toFixed(4)}&lomin=${(lon-dLon).toFixed(4)}&lamax=${(lat+dLat).toFixed(4)}&lomax=${(lon+dLon).toFixed(4)}`;
+  stat.textContent='OPENSKY...';
+  try{
+    const r=await fetch(url);
+    if(!r.ok)throw new Error('http '+r.status);
+    const j=await r.json();
+    const list=(j.states||[]).map(s=>({
+      icao:s[0],call:(s[1]||'').trim(),lon:s[5],lat:s[6],alt:s[7],ground:s[8],
+      vel:s[9],trk:s[10],vs:s[11],geoAlt:s[13]
+    })).filter(a=>a.lat!=null&&a.lon!=null);
+    tfData={center:{lat,lon},range,list,icao};
+    stat.textContent=`${list.length} A/C @ ${icao}`;stat.style.color='rgba(0,195,135,.82)';
+    renderTrafficList();drawScope();
+    CFG.homeAirport=icao;LS.set('cfg',CFG);
+  }catch(e){
+    stat.textContent='OPENSKY UNREACHABLE / RATE LIMIT';stat.style.color='rgba(210,70,70,.8)';
+    tfData={center:{lat,lon},range,list:[],icao};drawScope();renderTrafficList();
+  }
+}
+function renderTrafficList(){
+  const body=document.getElementById('trBody');body.innerHTML='';
+  if(!tfData.list||!tfData.list.length){
+    body.innerHTML='<tr><td colspan="5" style="text-align:center;color:rgba(120,135,128,.4);padding:14px 0">NO TARGETS</td></tr>';return;
+  }
+  const{lat:lat0,lon:lon0}=tfData.center;
+  const withDist=tfData.list.map(a=>{
+    const dLatNM=(a.lat-lat0)*60,dLonNM=(a.lon-lon0)*60*Math.cos(lat0*Math.PI/180);
+    return{...a,dist:Math.hypot(dLatNM,dLonNM)};
+  }).sort((a,b)=>a.dist-b.dist).slice(0,20);
+  withDist.forEach(a=>{
+    const altFt=a.ground?'GND':(a.alt!=null?Math.round(a.alt*3.281).toLocaleString():'—');
+    const spdKt=a.vel!=null?Math.round(a.vel*1.944):'—';
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td style="color:rgba(220,180,80,.85)">${a.call||a.icao||'—'}</td><td>${altFt}</td><td>${spdKt}</td><td>${a.trk!=null?String(Math.round(a.trk)).padStart(3,'0')+'°':'—'}</td><td>${a.dist.toFixed(1)}</td>`;
+    body.appendChild(tr);
+  });
+}
+function drawScope(){
+  const c=document.getElementById('scope');if(!c)return;
+  const dpr=DPR(),S=280;c.width=S*dpr;c.height=S*dpr;c.style.width=S+'px';c.style.height=S+'px';
+  const ctx=c.getContext('2d');ctx.scale(dpr,dpr);ctx.clearRect(0,0,S,S);
+  const cx=S/2,cy=S/2,maxR=S/2-14;
+  // background
+  const bg=ctx.createRadialGradient(cx,cy,0,cx,cy,maxR);
+  bg.addColorStop(0,'rgba(20,15,8,.92)');bg.addColorStop(1,'rgba(4,4,4,.95)');
+  ctx.fillStyle=bg;ctx.beginPath();ctx.arc(cx,cy,maxR+2,0,Math.PI*2);ctx.fill();
+  // range rings
+  ctx.strokeStyle='rgba(220,160,40,.22)';ctx.lineWidth=1;
+  [0.33,0.66,1].forEach(p=>{ctx.beginPath();ctx.arc(cx,cy,maxR*p,0,Math.PI*2);ctx.stroke();});
+  // crosshair
+  ctx.strokeStyle='rgba(220,160,40,.16)';
+  ctx.beginPath();ctx.moveTo(cx-maxR,cy);ctx.lineTo(cx+maxR,cy);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(cx,cy-maxR);ctx.lineTo(cx,cy+maxR);ctx.stroke();
+  // bearing labels (true)
+  ctx.fillStyle='rgba(220,180,80,.55)';ctx.font='8px "B612 Mono",monospace';ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText('N',cx,cy-maxR-7);ctx.fillText('S',cx,cy+maxR+8);
+  ctx.fillText('E',cx+maxR+8,cy);ctx.fillText('W',cx-maxR-8,cy);
+  // range labels
+  if(tfData.range){
+    ctx.fillStyle='rgba(220,160,40,.42)';ctx.textAlign='left';ctx.font='6.5px "B612 Mono",monospace';
+    [0.33,0.66,1].forEach(p=>{
+      const r=Math.round(tfData.range*p);
+      ctx.fillText(r+' NM',cx+maxR*p+4,cy-3);
+    });
+  }
+  // sweep dot at center
+  ctx.fillStyle='rgba(0,200,162,.85)';
+  ctx.beginPath();ctx.arc(cx,cy,3.5,0,Math.PI*2);ctx.fill();
+  ctx.strokeStyle='rgba(0,200,162,.4)';ctx.lineWidth=1;
+  ctx.beginPath();ctx.arc(cx,cy,7,0,Math.PI*2);ctx.stroke();
+  if(tfData.icao){
+    ctx.fillStyle='rgba(0,200,162,.6)';ctx.font='7px "B612 Mono",monospace';ctx.textAlign='left';
+    ctx.fillText(tfData.icao,cx+5,cy-7);
+  }
+  // aircraft
+  if(!tfData.list)return;
+  const{lat:lat0,lon:lon0}=tfData.center,rngNM=tfData.range;
+  tfData.list.forEach(a=>{
+    const dLatNM=(a.lat-lat0)*60;
+    const dLonNM=(a.lon-lon0)*60*Math.cos(lat0*Math.PI/180);
+    const dist=Math.hypot(dLatNM,dLonNM);
+    if(dist>rngNM*1.05)return;
+    const px=cx+dLonNM/rngNM*maxR,py=cy-dLatNM/rngNM*maxR;
+    // dot with glow
+    const g=ctx.createRadialGradient(px,py,0,px,py,5);
+    g.addColorStop(0,'rgba(255,205,80,.95)');g.addColorStop(1,'rgba(255,180,40,0)');
+    ctx.fillStyle=g;ctx.beginPath();ctx.arc(px,py,5,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='rgba(255,210,90,.95)';
+    ctx.beginPath();ctx.arc(px,py,2,0,Math.PI*2);ctx.fill();
+    // heading vector
+    if(a.trk!=null&&!a.ground){
+      const tk=a.trk*Math.PI/180;
+      ctx.strokeStyle='rgba(255,200,80,.6)';ctx.lineWidth=1;
+      ctx.beginPath();ctx.moveTo(px,py);ctx.lineTo(px+Math.sin(tk)*9,py-Math.cos(tk)*9);ctx.stroke();
+    }
+    if(a.call){
+      ctx.fillStyle='rgba(255,210,100,.55)';ctx.font='6.5px "B612 Mono",monospace';ctx.textAlign='left';
+      ctx.fillText(a.call,px+6,py-2);
+    }
+  });
+}
+function initTraffic(){
+  document.getElementById('trIcao').value=CFG.homeAirport||'KGMU';
+  drawScope();
+}
+
+/* ── NOTAM / TFR ── */
+function initNotam(){document.getElementById('ntIcao').value=CFG.homeAirport||'KGMU';}
+function openNotamSearch(){
+  const icao=(document.getElementById('ntIcao').value||CFG.homeAirport||'KGMU').toUpperCase();
+  window.open(`https://notams.aim.faa.gov/notamSearch/nsapp.html#/results?searchType=0&designatorsForLocation=${icao}`,'_blank','noopener');
+}
+function openTfrList(){window.open('https://tfr.faa.gov/tfr2/list.html','_blank','noopener');}
+
+/* ── AIRPORT INFO ── */
+async function fetchAirport(){
+  const icao=(document.getElementById('apIcao').value||CFG.homeAirport||'KGMU').toUpperCase();
+  const stat=document.getElementById('apStat');
+  stat.textContent='FETCHING...';stat.style.color='rgba(220,180,80,.78)';
+  try{
+    const r=await fetch(`https://aviationweather.gov/api/data/airport?ids=${icao}&format=json`);
+    const arr=await r.json();
+    if(!arr?.[0]){stat.textContent='NOT FOUND';stat.style.color='rgba(210,70,70,.8)';
+      document.getElementById('apDisp').innerHTML=`<div style="color:rgba(180,140,75,.45)">NO RECORD FOR ${icao}</div>`;return;}
+    stat.textContent='RECEIVED';stat.style.color='rgba(0,195,135,.82)';
+    CFG.homeAirport=icao;LS.set('cfg',CFG);
+    renderAirport(arr[0],icao);
+    if(arr[0].lat!=null) fetchSunTimes(parseFloat(arr[0].lat),parseFloat(arr[0].lon));
+  }catch(e){
+    stat.textContent='ERROR';stat.style.color='rgba(210,70,70,.8)';
+  }
+}
+function renderAirport(a,icao){
+  const disp=document.getElementById('apDisp');
+  disp.style.cssText='';
+  // Runways: API returns "rwys" or "runways" sometimes as string; normalize
+  let rwys='';
+  if(Array.isArray(a.runways)&&a.runways.length){
+    rwys=a.runways.map(r=>{
+      const id=r.id||(r.le_ident&&r.he_ident?`${r.le_ident}/${r.he_ident}`:r.name||'—');
+      const len=r.length_ft||r.length;
+      const wid=r.width_ft||r.width;
+      const sfc=r.surface||r.surf||'';
+      const dim=len?`${(+len).toLocaleString()} × ${wid||'—'} FT`:'';
+      return `<div class="ap-rwy"><span class="rwid">RWY ${id}</span><span class="rdim">${dim} ${sfc}</span></div>`;
+    }).join('');
+  }else if(typeof a.rwys==='string'&&a.rwys.length){
+    rwys=a.rwys.split(',').map(s=>`<div class="ap-rwy"><span class="rwid">RWY ${s.trim()}</span></div>`).join('');
+  }else{rwys='<div class="lbl" style="font-size:8px">NO RUNWAY DATA RETURNED</div>';}
+
+  // Frequencies
+  let freqs='';
+  const fArr=Array.isArray(a.freqs)?a.freqs:Array.isArray(a.frequencies)?a.frequencies:null;
+  if(fArr&&fArr.length){
+    freqs=fArr.map(f=>{
+      const type=(f.type||f.description||f.name||'FREQ').toString().slice(0,16);
+      const val=f.freq||f.frequency_mhz||f.freqMHz||f.frequency||'';
+      return `<div class="freq-row"><span class="ftype">${type}</span><span class="fval">${val}</span></div>`;
+    }).join('');
+  }else if(typeof a.freqs==='string'&&a.freqs.length){
+    freqs=a.freqs.split(/[;,]/).map(s=>{
+      const m=s.trim().match(/^(.+?)\s+([\d.]+)$/);
+      return m?`<div class="freq-row"><span class="ftype">${m[1]}</span><span class="fval">${m[2]}</span></div>`:`<div class="freq-row"><span class="ftype">${s.trim()}</span></div>`;
+    }).join('');
+  }else{freqs='<div class="lbl" style="grid-column:1/-1;font-size:8px">NO FREQUENCY DATA RETURNED</div>';}
+
+  const fuel=a.fuel||a.fuelTypes||'—';
+  disp.innerHTML=`
+    <div class="g2" style="gap:12px">
+      <div class="ap-block card">
+        <div class="card-hdr">${icao} · ${a.name||'—'}</div>
+        <div class="crow"><span class="lbl">ELEV</span><span class="val">${a.elev!=null?Math.round(a.elev)+' FT MSL':'—'}</span></div>
+        <div class="crow"><span class="lbl">LAT/LON</span><span class="val" style="font-size:9.5px">${a.lat!=null?(+a.lat).toFixed(4):'—'}, ${a.lon!=null?(+a.lon).toFixed(4):'—'}</span></div>
+        <div class="crow"><span class="lbl">MAGVAR</span><span class="val">${a.magdec||'—'}</span></div>
+        <div class="crow"><span class="lbl">FUEL</span><span class="val amb">${fuel}</span></div>
+        <div class="crow"><span class="lbl">TYPE</span><span class="val">${a.type||'—'}</span></div>
+        <div class="crow"><span class="lbl">STATE</span><span class="val">${a.state||a.country||'—'}</span></div>
+      </div>
+      <div class="ap-block card">
+        <div class="card-hdr">SUN TIMES</div>
+        <div id="sunBlock" class="lbl" style="font-size:8px">FETCHING…</div>
+        <canvas id="sunArc" class="sun-arc" width="240" height="80"></canvas>
+      </div>
+    </div>
+    <div class="ap-block card">
+      <div class="card-hdr">RUNWAYS</div>
+      ${rwys}
+    </div>
+    <div class="ap-block card">
+      <div class="card-hdr">FREQUENCIES</div>
+      <div class="freq-grid">${freqs}</div>
+    </div>
+  `;
+}
+async function fetchSunTimes(lat,lon){
+  try{
+    const r=await fetch(`https://api.sunrise-sunset.org/json?lat=${lat}&lng=${lon}&formatted=0`);
+    const j=await r.json();
+    if(j.status!=='OK')return;
+    const fmt=iso=>{const d=new Date(iso);return d.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',hour12:false});};
+    const sb=document.getElementById('sunBlock');if(!sb)return;
+    sb.innerHTML=`
+      <div class="crow"><span class="lbl">CIVIL DAWN</span><span class="val">${fmt(j.results.civil_twilight_begin)}</span></div>
+      <div class="crow"><span class="lbl">SUNRISE</span><span class="val grn">${fmt(j.results.sunrise)}</span></div>
+      <div class="crow"><span class="lbl">SOLAR NOON</span><span class="val">${fmt(j.results.solar_noon)}</span></div>
+      <div class="crow"><span class="lbl">SUNSET</span><span class="val amb">${fmt(j.results.sunset)}</span></div>
+      <div class="crow"><span class="lbl">CIVIL DUSK</span><span class="val">${fmt(j.results.civil_twilight_end)}</span></div>
+    `;
+    drawSunArc(j.results);
+  }catch(e){
+    const sb=document.getElementById('sunBlock');if(sb)sb.textContent='SUN API UNREACHABLE';
+  }
+}
+function drawSunArc(r){
+  const c=document.getElementById('sunArc');if(!c)return;
+  const dpr=DPR(),W=240,H=80;c.width=W*dpr;c.height=H*dpr;c.style.width=W+'px';c.style.height=H+'px';
+  const ctx=c.getContext('2d');ctx.scale(dpr,dpr);ctx.clearRect(0,0,W,H);
+  const cx=W/2,cy=H+8,rad=W/2-12;
+  // ground line
+  ctx.strokeStyle='rgba(120,90,40,.5)';ctx.lineWidth=1;
+  ctx.beginPath();ctx.moveTo(0,H-2);ctx.lineTo(W,H-2);ctx.stroke();
+  // arc gradient
+  const grd=ctx.createLinearGradient(0,0,W,0);
+  grd.addColorStop(0,'rgba(255,150,60,.45)');grd.addColorStop(.5,'rgba(255,210,80,.6)');grd.addColorStop(1,'rgba(255,150,60,.45)');
+  ctx.strokeStyle=grd;ctx.lineWidth=1.6;
+  ctx.beginPath();ctx.arc(cx,cy,rad,Math.PI,0,false);ctx.stroke();
+  // tick marks at quarters
+  ctx.strokeStyle='rgba(220,160,40,.5)';ctx.lineWidth=1;
+  [Math.PI,Math.PI*1.25,Math.PI*1.5,Math.PI*1.75,0].forEach(a=>{
+    const x1=cx+rad*Math.cos(a),y1=cy+rad*Math.sin(a);
+    const x2=cx+(rad+4)*Math.cos(a),y2=cy+(rad+4)*Math.sin(a);
+    ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();
+  });
+  // sun position
+  const now=new Date(),sr=new Date(r.sunrise),ss=new Date(r.sunset);
+  const t=(now-sr)/(ss-sr);
+  if(t>=0&&t<=1){
+    const ang=Math.PI+t*Math.PI;
+    const px=cx+rad*Math.cos(ang),py=cy+rad*Math.sin(ang);
+    const g=ctx.createRadialGradient(px,py,0,px,py,9);
+    g.addColorStop(0,'#fff5d0');g.addColorStop(.4,'rgba(255,210,90,.85)');g.addColorStop(1,'rgba(255,150,40,0)');
+    ctx.fillStyle=g;ctx.beginPath();ctx.arc(px,py,9,0,Math.PI*2);ctx.fill();
+  }else{
+    // sun below horizon — show indicator
+    ctx.fillStyle='rgba(140,110,60,.42)';ctx.font='8px "B612",sans-serif';ctx.textAlign='center';
+    ctx.fillText(t<0?'BEFORE SUNRISE':'AFTER SUNSET',cx,H/2);
+  }
+}
+function initAirport(){
+  document.getElementById('apIcao').value=CFG.homeAirport||'KGMU';
+}
+
+/* ── E6B ── */
+function calcDA(){
+  const pa=parseFloat(document.getElementById('daPa').value);
+  const oat=parseFloat(document.getElementById('daOat').value);
+  const out=document.getElementById('daOut'),sub=document.getElementById('daIsa');
+  if(isNaN(pa)||isNaN(oat)){sub.textContent='ENTER PRESSURE ALT & OAT';return;}
+  const isa=15-(pa/1000)*1.98;
+  const da=Math.round(pa+120*(oat-isa));
+  out.textContent=da.toLocaleString()+' FT';
+  out.className='e6-out '+(da>pa+2000?'red':da>pa+800?'amb':'');
+  const dev=oat-isa;
+  sub.textContent=`ISA TEMP: ${isa.toFixed(1)}°C · DEV ${(dev>=0?'+':'')+dev.toFixed(1)}°C`;
+}
+function calcXWind(){
+  const rwy=parseFloat(document.getElementById('cwRwy').value);
+  const wd=parseFloat(document.getElementById('cwDir').value);
+  const ws=parseFloat(document.getElementById('cwSpd').value);
+  const out=document.getElementById('cwOut'),sub=document.getElementById('cwSub');
+  if([rwy,wd,ws].some(isNaN)){sub.textContent='ENTER RUNWAY & WIND';return;}
+  const ang=((wd-rwy+540)%360-180)*Math.PI/180;
+  const xw=Math.round(Math.abs(ws*Math.sin(ang))*10)/10;
+  const hw=Math.round(ws*Math.cos(ang)*10)/10;
+  const side=Math.sin(ang)>=0?'R':'L';
+  out.textContent=`XW ${xw} ${side}  HW ${hw}`;
+  out.className='e6-out '+(xw>=15?'red':xw>=10?'amb':'');
+  sub.textContent=hw<0?`TAILWIND COMPONENT ${Math.abs(hw)} KT — CHECK LIMITS`:`HEADWIND ${hw} KT · OFFSET ${Math.abs(Math.round((wd-rwy+540)%360-180))}°`;
+}
+function calcTAS(){
+  const ias=parseFloat(document.getElementById('tasIas').value);
+  const pa=parseFloat(document.getElementById('tasPa').value);
+  const oat=parseFloat(document.getElementById('tasOat').value);
+  const out=document.getElementById('tasOut'),sub=document.getElementById('tasSub');
+  if([ias,pa,oat].some(isNaN)){sub.textContent='ENTER IAS, PRESS ALT, OAT';return;}
+  const T=oat+273.15;
+  const P=1013.25*Math.pow(Math.max(0.05,1-2.25577e-5*pa*0.3048),5.25588);
+  const rho=P*100/(287.05*T);
+  const rho0=1.225;
+  const tas=ias*Math.sqrt(rho0/rho);
+  const a=20.05*Math.sqrt(T); // speed of sound m/s
+  const mach=tas*0.514444/a;
+  out.textContent=tas.toFixed(0)+' KT';
+  out.className='e6-out';
+  sub.textContent=`MACH ${mach.toFixed(2)} · ρ ${rho.toFixed(3)} KG/M³ · ΔISA ${(oat-(15-pa/1000*1.98)).toFixed(1)}°C`;
+}
+
+/* ── CURRENCY TRACKER ── */
+const CUR_DEFS=[
+  {k:'bfr',l:'Flight Review (BFR)',months:24},
+  {k:'med1',l:'Medical · 1st Class',med:1},
+  {k:'med2',l:'Medical · 2nd Class',med:2},
+  {k:'med3',l:'Medical · 3rd Class',med:3},
+  {k:'ipc',l:'IPC / Instrument Currency',months:6},
+  {k:'hp',l:'High-Performance Endorsement',oneTime:true},
+  {k:'cmpx',l:'Complex Endorsement',oneTime:true},
+  {k:'tw',l:'Tailwheel Endorsement',oneTime:true}
+];
+function _addMo(d,m){const x=new Date(d);x.setMonth(x.getMonth()+m);return x;}
+function _eom(d){return new Date(d.getFullYear(),d.getMonth()+1,0,23,59,59);}
+function _fmt(d){return d.toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'});}
+function _medExp(date,cls,age){
+  const d=new Date(date);if(isNaN(d))return null;
+  let m=12;
+  if(cls===1) m=age>=40?6:12;
+  else if(cls===2) m=12;
+  else if(cls===3) m=age>=40?24:60;
+  return _eom(_addMo(d,m));
+}
+function renderCurrency(){
+  document.getElementById('curAge').value=CFG.curr?.age||'';
+  document.getElementById('curAge').onchange=function(){
+    CFG.curr=CFG.curr||{};CFG.curr.age=parseInt(this.value)||null;LS.set('cfg',CFG);renderCurrency();
+  };
+  const list=document.getElementById('curList');list.innerHTML='';
+  const age=parseInt(CFG.curr?.age||40);
+  CUR_DEFS.forEach(def=>{
+    const cur=CFG.curr?.[def.k]||'';
+    let stat='— NOT SET',cls='';
+    if(cur){
+      const d=new Date(cur);
+      if(def.oneTime){stat='ON FILE · '+_fmt(d);cls='ok';}
+      else{
+        let exp;
+        if(def.med) exp=_medExp(cur,def.med,age);
+        else if(def.months) exp=_eom(_addMo(d,def.months));
+        if(exp){
+          const days=Math.ceil((exp-new Date())/86400000);
+          stat=(days<0?'EXPIRED · ':'UNTIL ')+_fmt(exp)+(days<0?` (${-days}d AGO)`:` · ${days}d LEFT`);
+          cls=days<0?'fail':days<30?'warn':'ok';
+        }
+      }
+    }
+    const rcls=cls==='warn'?'cur-warn':cls==='fail'?'cur-fail':'';
+    const row=document.createElement('div');row.className='cur-row '+rcls;
+    row.innerHTML=`<div class="cur-name">${def.l}</div>
+      <input class="inp" type="date" value="${cur}" onchange="setCur('${def.k}',this.value)" style="width:160px">
+      <div class="cur-stat ${cls}">${stat}</div>`;
+    list.appendChild(row);
+  });
+  renderTLs();
+}
+function setCur(k,v){CFG.curr=CFG.curr||{};CFG.curr[k]=v;LS.set('cfg',CFG);renderCurrency();}
+function addTL(type){
+  const id=type==='day'?'dtlD':'ntlD';
+  const v=document.getElementById(id).value;if(!v)return;
+  const arr=type==='day'?CFG.tlDay:CFG.tlNight;
+  arr.unshift(v);LS.set('cfg',CFG);
+  document.getElementById(id).value='';renderTLs();
+}
+function rmTL(type,i){
+  const arr=type==='day'?CFG.tlDay:CFG.tlNight;
+  arr.splice(i,1);LS.set('cfg',CFG);renderTLs();
+}
+function renderTLs(){
+  function block(arr,id,type){
+    const cont=document.getElementById(id);if(!cont)return;
+    cont.innerHTML='';
+    const now=new Date(),valid=[];
+    (arr||[]).forEach((d,i)=>{
+      const dt=new Date(d),days=Math.floor((now-dt)/86400000);
+      const inWin=days<=90&&days>=0;if(inWin)valid.push(d);
+      const div=document.createElement('div');div.style.cssText='display:flex;gap:6px;align-items:center;margin-bottom:3px';
+      div.innerHTML=`<span class="val" style="font-size:10px;color:${inWin?'rgba(195,210,200,.78)':'rgba(140,150,140,.32)'}">${d}</span>
+        <span class="lbl" style="font-size:7px;flex:1">${days>=0?days+'d ago':'future'}${inWin?'':days>90?' · expired':''}</span>
+        <button class="btn" style="padding:2px 6px;font-size:6px" onclick="rmTL('${type}',${i})">×</button>`;
+      cont.appendChild(div);
+    });
+    const head=document.createElement('div');
+    const ok=valid.length>=3;
+    head.style.cssText=`font-family:'B612 Mono',monospace;font-size:11px;margin-bottom:8px;letter-spacing:.04em;color:${ok?'#38d882':'#e8c038'}`;
+    head.textContent=`${valid.length}/3 IN LAST 90D · ${ok?'CURRENT':'NOT CURRENT'}`;
+    cont.prepend(head);
+  }
+  block(CFG.tlDay,'dayTL','day');
+  block(CFG.tlNight,'ntTL','night');
+}
+
+/* ── NOTES ── */
+document.getElementById('noteTa').oninput=function(){CFG.notes=this.value;LS.set('cfg',CFG);};
+
+/* ── SIM LOOP ── */
+let simT=0,lastTs=0;
+(function loop(ts){
+  requestAnimationFrame(loop);
+  const dt=Math.min((ts-lastTs)/1000,.05);lastTs=ts;simT+=dt;
+  SIM.bank=Math.sin(simT*.16)*2.8;
+  SIM.vs=Math.round(Math.sin(simT*.075)*75);
+  SIM.ias=152+Math.sin(simT*.11)*3.5;
+  SIM.n1a=88.2+Math.sin(simT*.055)*.4;
+  SIM.n1b=88.5+Math.sin(simT*.065)*.35;
+  SIM.fuel-=dt*.38;if(SIM.fuel<7200)SIM.fuel=8600;
+  updateTapes();
+  const gs=parseFloat(document.getElementById('gASI')?.style.width)||88;
+  GDEFS.forEach(d=>renderGauge(d,gs));
+})(0);
+
+/* ── INIT ── */
+document.getElementById('rc1').textContent=CFG.com1;
+document.getElementById('rc2').textContent=CFG.com2;
+document.getElementById('rn1').textContent=CFG.nav1;
+document.getElementById('rn2').textContent=CFG.nav2;
+document.getElementById('rxp').textContent=CFG.xpdr;
+initGauges(); updateTapes(); renderLogbook(); renderTraining();
+if(CFG.homeAirport){
+  document.getElementById('wxIcao').value=CFG.homeAirport;
+  document.getElementById('trIcao').value=CFG.homeAirport;
+  document.getElementById('ntIcao').value=CFG.homeAirport;
+  document.getElementById('apIcao').value=CFG.homeAirport;
+}
+if(CFG.notes) document.getElementById('noteTa').value=CFG.notes;
+if(CFG.finnhubKey) document.getElementById('apiKey').value=CFG.finnhubKey;
+
+/* ── DRAG-DROP HANDOFF ── */
+document.body.addEventListener('dragover',e=>{e.preventDefault();e.dataTransfer.dropEffect='copy';});
+document.body.addEventListener('drop',e=>{
+  e.preventDefault();
+  const f=e.dataTransfer.files[0];if(!f)return;
+  const r=new FileReader();r.onload=ev=>{
+    const txt=ev.target.result;
+    const grab=(re,d)=>{const m=txt.match(re);return m?m[1].trim():d;};
+    const cs=grab(/callsign[:\s]+([^\n]+)/i,'N-529TF');
+    if(cs&&cs!=='_____') CFG.registration=cs;
+    const icao=grab(/ICAO code[^:]*:\s*([A-Z0-9]{3,4})/i,'KDFW');
+    if(icao?.length>=3) CFG.homeAirport=icao;
+    document.getElementById('tReg').textContent=CFG.registration+' · '+CFG.callsign;
+    if(CFG.homeAirport) document.getElementById('wxIcao').value=CFG.homeAirport;
+    LS.set('cfg',CFG);alert('HANDOFF IMPORTED');
+  };r.readAsText(f);
+});
+</script></body></html>

@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>N32069 — Weight, Balance & Performance</title>
+<style>
+  :root {
+    --ink:      #1a1a1a;
+    --paper:    #ffffff;
+    --paper-2:  #f5f6f8;
+    --navy:     #1f3a68;
+    --navy-2:   #2a4a82;
+    --rule:     #d4d8de;
+    --rule-2:   #b8bdc7;
+    --red:      #c0282c;
+    --red-2:    #8f1d20;
+    --green:    #2c7a3e;
+    --muted:    #6c7280;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: #e8ebf0;
+    color: var(--ink);
+    font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+    font-size: 13px;
+    line-height: 1.45;
+  }
+
+  body {
+    min-height: 100vh;
+    padding: 12px;
+  }
+
+  .sheet {
+    max-width: 1480px;
+    margin: 0 auto;
+    background: var(--paper);
+    border: 1px solid var(--rule-2);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.05);
+    padding: 18px 24px 20px;
+    position: relative;
+  }
+
+  header.masthead {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 20px;
+    border-bottom: 2px solid var(--navy);
+    padding-bottom: 10px;
+    margin-bottom: 12px;
+  }
+  .brand-wrap { display: flex; align-items: center; gap: 16px; }
+
+  .ga-logo {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    flex-shrink: 0;
+  }
+  .ga-logo .ga-mark {
+    width: 64px;
+    height: 56px;
+  }
+  .ga-logo .ga-mark svg {
+    width: 100%;
+    height: 100%;
+  }
+  .ga-logo .ga-text {
+    line-height: 1;
+  }
+  .ga-logo .ga-text .greenville {
+    font-family: 'Brush Script MT', 'Lucida Handwriting', cursive;
+    font-style: italic;
+    font-size: 24px;
+    color: var(--navy);
+    font-weight: 400;
+    letter-spacing: -0.01em;
+  }
+  .ga-logo .ga-text .aviation {
+    font-family: 'Brush Script MT', 'Lucida Handwriting', cursive;
+    font-style: italic;
+    font-size: 22px;
+    color: var(--navy);
+    margin-top: -2px;
+    margin-left: 14px;
+  }
+
+  .brand-text-wrap {
+    border-left: 1px solid var(--rule-2);
+    padding-left: 20px;
+    margin-left: 4px;
+  }
+  .brand-text-wrap .lede {
+    font-size: 13px;
+    color: var(--ink);
+    max-width: 480px;
+    line-height: 1.4;
+  }
+
+  .tail { text-align: right; }
+  .tail .tail-no {
+    font-weight: 700;
+    font-size: 28px;
+    letter-spacing: 0.04em;
+    color: var(--navy);
+    line-height: 1;
+  }
+  .tail .tail-type {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--ink);
+    margin-top: 4px;
+    letter-spacing: 0.02em;
+  }
+  .tail .form-title {
+    font-size: 14px;
+    color: var(--ink);
+    margin-top: 4px;
+    font-weight: 600;
+  }
+  .tail .rev {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 6px;
+  }
+
+  .h2 {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--navy);
+    border-bottom: 1px solid var(--navy);
+    padding-bottom: 3px;
+    margin: 0 0 8px;
+    letter-spacing: 0.01em;
+  }
+
+  .grid-main {
+    display: grid;
+    grid-template-columns: 1.15fr 1fr 0.95fr;
+    gap: 18px;
+  }
+
+  .reference {
+    background: var(--paper-2);
+    border: 1px solid var(--rule-2);
+    border-left: 3px solid var(--navy);
+    padding: 8px 12px;
+    font-size: 11.5px;
+    margin-bottom: 10px;
+  }
+  .reference .ref-title {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--navy);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 4px;
+  }
+  .reference ul { margin: 0; padding: 0; list-style: none; }
+  .reference li { padding: 1px 0; color: var(--ink); line-height: 1.35; }
+  .reference li b { color: var(--navy); font-weight: 600; }
+
+  table.ws {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+  table.ws th, table.ws td {
+    border: 1px solid var(--rule-2);
+    padding: 5px 8px;
+    text-align: left;
+    vertical-align: middle;
+    background: var(--paper);
+  }
+  table.ws thead th {
+    background: var(--navy);
+    color: #fff;
+    font-size: 10.5px;
+    letter-spacing: 0.04em;
+    text-align: center;
+    font-weight: 600;
+    padding: 5px 6px;
+    border-color: var(--navy);
+  }
+  table.ws .label {
+    width: 38%;
+    font-weight: 600;
+    color: var(--ink);
+  }
+  table.ws .label .hint {
+    display: block;
+    font-weight: 400;
+    color: var(--muted);
+    font-size: 11px;
+    margin-top: 1px;
+  }
+  table.ws .arm-cell, table.ws .moment-cell {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+  table.ws .moment-cell {
+    background: var(--paper-2);
+    color: var(--ink);
+  }
+
+  table.ws input[type="number"] {
+    width: 100%;
+    border: none;
+    background: transparent;
+    font-family: inherit;
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+    color: var(--ink);
+    padding: 2px 4px;
+    outline: none;
+    -moz-appearance: textfield;
+  }
+  table.ws input[type="number"]::-webkit-outer-spin-button,
+  table.ws input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  table.ws input[type="number"]:focus {
+    background: #fff8e0;
+    box-shadow: inset 0 -2px 0 var(--navy);
+  }
+
+  tr.subtotal td {
+    background: var(--paper-2);
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink);
+  }
+  tr.subtotal .subtotal-label {
+    font-weight: 700;
+    font-size: 12.5px;
+    color: var(--navy);
+  }
+  tr.takeoff td {
+    background: var(--navy);
+    color: #fff;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    border-color: var(--navy);
+  }
+  tr.takeoff input { color: #fff; }
+  tr.takeoff .subtotal-label {
+    color: #fff;
+    font-weight: 700;
+    font-size: 12.5px;
+  }
+
+  .chart-card {
+    background: var(--paper);
+    border: 1px solid var(--rule-2);
+    padding: 10px 12px;
+  }
+  .chart-card h3 {
+    margin: 0 0 2px;
+    font-size: 13px;
+    color: var(--navy);
+    font-weight: 700;
+  }
+  .chart-card .chart-sub {
+    font-size: 11px;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+  svg.envelope {
+    width: 100%;
+    height: auto;
+    display: block;
+    background: var(--paper);
+    border: 1px solid var(--rule-2);
+  }
+  .axis-label {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    font-size: 10px;
+    fill: var(--muted);
+  }
+  .axis-title {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    font-size: 11px;
+    fill: var(--ink);
+    font-weight: 600;
+  }
+  .envelope-poly { fill: rgba(31,58,104,0.06); stroke: var(--navy); stroke-width: 1.5; }
+  .utility-poly  { fill: rgba(192,40,44,0.06); stroke: var(--navy); stroke-width: 1; stroke-dasharray: 4 3; }
+  .cat-label {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    font-size: 11px;
+    fill: var(--ink);
+    font-weight: 600;
+  }
+  .gridline { stroke: rgba(0,0,0,0.06); stroke-width: 0.5; }
+  .marker-dot {
+    fill: var(--green);
+    stroke: #fff;
+    stroke-width: 2;
+    transition: cx 0.25s ease, cy 0.25s ease, fill 0.2s ease;
+  }
+  .marker-dot.outside { fill: var(--red); }
+
+  .status-banner {
+    margin-top: 10px;
+    padding: 8px 12px;
+    border: 1px solid var(--rule-2);
+    border-left: 4px solid var(--muted);
+    background: var(--paper-2);
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 12px;
+    align-items: center;
+  }
+  .status-banner.ok { border-left-color: var(--green); background: #f0f8f2; }
+  .status-banner.bad { border-left-color: var(--red); background: #fcf0f0; }
+  .status-banner .badge {
+    width: 48px; height: 48px;
+    border-radius: 4px;
+    display: grid; place-items: center;
+    font-size: 9.5px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    color: #fff;
+    text-align: center;
+    line-height: 1.05;
+    padding: 4px;
+    background: var(--muted);
+  }
+  .status-banner.ok .badge { background: var(--green); }
+  .status-banner.bad .badge { background: var(--red); }
+  .status-banner .msg b {
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-size: 13px;
+    color: var(--ink);
+  }
+  .status-detail {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 3px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .perf { margin-top: 0; }
+  table.perf-tbl {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+  table.perf-tbl th, table.perf-tbl td {
+    border: 1px solid var(--rule-2);
+    padding: 5px 8px;
+    background: var(--paper);
+  }
+  table.perf-tbl thead th {
+    background: var(--navy);
+    color: #fff;
+    font-size: 10.5px;
+    letter-spacing: 0.04em;
+    text-align: center;
+    font-weight: 600;
+    border-color: var(--navy);
+    padding: 5px 6px;
+  }
+  table.perf-tbl .perf-label { width: 56%; font-weight: 600; line-height: 1.25; }
+  table.perf-tbl .perf-label .hint {
+    display: block;
+    font-weight: 400;
+    color: var(--muted);
+    font-size: 11px;
+  }
+  table.perf-tbl input[type="text"], table.perf-tbl input[type="number"] {
+    width: 100%;
+    border: none;
+    background: transparent;
+    font-family: inherit;
+    font-size: 13px;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+    color: var(--ink);
+    padding: 2px 4px;
+    outline: none;
+  }
+  table.perf-tbl input:focus {
+    background: #fff8e0;
+    box-shadow: inset 0 -2px 0 var(--navy);
+  }
+  .computed {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    background: var(--paper-2) !important;
+    color: var(--navy);
+    font-weight: 700;
+  }
+  .na {
+    text-align: center;
+    color: var(--muted);
+    background: var(--paper-2) !important;
+    font-size: 11.5px;
+  }
+
+  .notes {
+    margin-top: 10px;
+    background: var(--paper-2);
+    border: 1px solid var(--rule-2);
+    border-left: 3px solid var(--red);
+    padding: 8px 12px;
+    font-size: 11.5px;
+  }
+  .notes .ref-title {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--red-2);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 4px;
+  }
+  .notes ul { margin: 2px 0 0 16px; padding: 0; }
+  .notes li { margin-bottom: 2px; line-height: 1.35; }
+
+  .toolbar {
+    display: flex;
+    gap: 6px;
+    justify-content: flex-end;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+  }
+  .toolbar button {
+    background: var(--navy);
+    color: #fff;
+    border: 1px solid var(--navy);
+    font-family: inherit;
+    font-size: 10.5px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    padding: 5px 12px;
+    cursor: pointer;
+    transition: all 0.12s ease;
+    border-radius: 2px;
+  }
+  .toolbar button:hover { background: var(--navy-2); }
+  .toolbar button.ghost {
+    background: transparent;
+    color: var(--ink);
+    border-color: var(--rule-2);
+  }
+  .toolbar button.ghost:hover {
+    background: var(--paper-2);
+    border-color: var(--muted);
+  }
+
+  footer.colophon {
+    margin-top: 12px;
+    border-top: 1px solid var(--rule-2);
+    padding-top: 6px;
+    font-size: 10px;
+    color: var(--muted);
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  @media (max-width: 1200px) {
+    .grid-main { grid-template-columns: 1fr 1fr; }
+    .grid-main > div:nth-child(3) { grid-column: 1 / -1; }
+  }
+  @media (max-width: 880px) {
+    .grid-main { grid-template-columns: 1fr; }
+    .grid-main > div:nth-child(3) { grid-column: auto; }
+    .sheet { padding: 14px; }
+    header.masthead { grid-template-columns: 1fr; }
+    .tail { text-align: left; border-top: 1px solid var(--rule-2); padding-top: 12px; }
+    .brand-text-wrap { border-left: none; padding-left: 0; margin-left: 0; margin-top: 8px; }
+    .brand-wrap { flex-direction: column; align-items: flex-start; }
+  }
+
+  @media print {
+    body { background: white; padding: 0; }
+    .sheet { box-shadow: none; border: none; padding: 18px; }
+    .toolbar { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="sheet">
+
+  <header class="masthead">
+    <div class="brand-wrap">
+      <div class="ga-logo">
+        <div class="ga-mark">
+          <svg viewBox="0 0 64 56" xmlns="http://www.w3.org/2000/svg">
+            <text x="0" y="44" font-family="Georgia, serif" font-size="48" font-weight="400" font-style="italic" fill="#1f3a68">G</text>
+            <text x="22" y="50" font-family="Georgia, serif" font-size="40" font-weight="700" fill="#c0282c">A</text>
+            <path d="M 10 50 Q 32 56 60 48" stroke="#c0282c" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="ga-text">
+          <div class="greenville">Greenville</div>
+          <div class="aviation">Aviation</div>
+        </div>
+      </div>
+      <div class="brand-text-wrap">
+        <div class="lede">Please complete the following calculations to ensure you are operating the aircraft within safe and legal limits.</div>
+      </div>
+    </div>
+    <div class="tail">
+      <div class="tail-no">N32069</div>
+      <div class="tail-type">PIPER WARRIOR</div>
+      <div class="form-title">Weight, Balance, and Performance</div>
+      <div class="rev">Last Revised: 01/02/2026</div>
+    </div>
+  </header>
+
+  <div class="toolbar">
+    <button type="button" onclick="window.print()">Print / Save PDF</button>
+    <button type="button" class="ghost" onclick="resetForm()">Clear All</button>
+  </div>
+
+  <div class="grid-main">
+    <!-- COLUMN 1: Weight & Balance worksheet -->
+    <div>
+      <div class="reference">
+        <div class="ref-title">Conversions &amp; Equations</div>
+        <ul>
+          <li>Distance × 1.5 = <b>Distance with 50% safety margin</b></li>
+          <li>Weight × Arm = <b>Moment</b> &nbsp;·&nbsp; Total Moment ÷ Total Weight = <b>CG</b></li>
+          <li>Fuel Onboard ÷ Cruise gal/hr = <b>Endurance</b></li>
+          <li>Fuel ≈ <b>6 lbs/gal</b> &nbsp;·&nbsp; Oil ≈ <b>1.875 lbs/qt</b></li>
+        </ul>
+      </div>
+
+      <div class="h2">Weight &amp; Balance</div>
+
+      <table class="ws">
+        <thead>
+          <tr>
+            <th></th>
+            <th style="width:22%">Weight (lbs)</th>
+            <th style="width:16%">Arm (in)</th>
+            <th style="width:24%">Moment (in-lbs)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="label">Aircraft Empty Weight</td>
+            <td><input type="number" id="w_empty" value="1426.15" step="0.01"></td>
+            <td class="arm-cell">87.24</td>
+            <td class="moment-cell" id="m_empty">124,418.31</td>
+          </tr>
+          <tr>
+            <td class="label">Oil <span class="hint">15 lb max</span></td>
+            <td><input type="number" id="w_oil" placeholder="0" step="0.01" max="15"></td>
+            <td class="arm-cell">27.5</td>
+            <td class="moment-cell" id="m_oil">—</td>
+          </tr>
+          <tr>
+            <td class="label">Front Seat Occupants</td>
+            <td><input type="number" id="w_front" placeholder="0" step="0.1"></td>
+            <td class="arm-cell">80.5</td>
+            <td class="moment-cell" id="m_front">—</td>
+          </tr>
+          <tr>
+            <td class="label">Rear Seat</td>
+            <td><input type="number" id="w_rear" placeholder="0" step="0.1"></td>
+            <td class="arm-cell">118.1</td>
+            <td class="moment-cell" id="m_rear">—</td>
+          </tr>
+          <tr>
+            <td class="label">Baggage <span class="hint">200 lb max</span></td>
+            <td><input type="number" id="w_bag" placeholder="0" step="0.1" max="200"></td>
+            <td class="arm-cell">142.8</td>
+            <td class="moment-cell" id="m_bag">—</td>
+          </tr>
+          <tr class="subtotal">
+            <td class="subtotal-label">Zero Fuel Weight &amp; CG</td>
+            <td id="zfw">—</td>
+            <td class="arm-cell" id="zfw_cg">CG = —</td>
+            <td class="moment-cell" id="zfw_mom">—</td>
+          </tr>
+          <tr>
+            <td class="label">+ Usable Fuel <span class="hint">288 lb max · 48 gal</span></td>
+            <td><input type="number" id="w_fuel" placeholder="0" step="0.1" max="288"></td>
+            <td class="arm-cell">95</td>
+            <td class="moment-cell" id="m_fuel">—</td>
+          </tr>
+          <tr class="takeoff">
+            <td class="subtotal-label">Takeoff Weight &amp; CG</td>
+            <td id="tow">—</td>
+            <td class="arm-cell" id="tow_cg">CG = —</td>
+            <td class="moment-cell" id="tow_mom">—</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="status-banner" id="status">
+        <div class="badge" id="status-badge">READY</div>
+        <div>
+          <div class="msg"><b id="status-title">Awaiting input</b></div>
+          <div class="status-detail" id="status-detail">Enter occupant, baggage, and fuel weights above.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- COLUMN 2: CG envelope + notes -->
+    <div>
+      <div class="chart-card">
+        <h3>C.G. Range &amp; Weight</h3>
+        <div class="chart-sub">Marker = current Takeoff CG · updates live.</div>
+        <svg class="envelope" viewBox="0 0 480 360" preserveAspectRatio="none">
+          <g class="gridlines">
+            <line class="gridline" x1="40" y1="20" x2="40" y2="320"/>
+            <line class="gridline" x1="76.67" y1="20" x2="76.67" y2="320"/>
+            <line class="gridline" x1="113.33" y1="20" x2="113.33" y2="320"/>
+            <line class="gridline" x1="150" y1="20" x2="150" y2="320"/>
+            <line class="gridline" x1="186.67" y1="20" x2="186.67" y2="320"/>
+            <line class="gridline" x1="223.33" y1="20" x2="223.33" y2="320"/>
+            <line class="gridline" x1="260" y1="20" x2="260" y2="320"/>
+            <line class="gridline" x1="296.67" y1="20" x2="296.67" y2="320"/>
+            <line class="gridline" x1="333.33" y1="20" x2="333.33" y2="320"/>
+            <line class="gridline" x1="370" y1="20" x2="370" y2="320"/>
+            <line class="gridline" x1="406.67" y1="20" x2="406.67" y2="320"/>
+            <line class="gridline" x1="443.33" y1="20" x2="443.33" y2="320"/>
+
+            <line class="gridline" x1="40" y1="320" x2="443.33" y2="320"/>
+            <line class="gridline" x1="40" y1="282.5" x2="443.33" y2="282.5"/>
+            <line class="gridline" x1="40" y1="245" x2="443.33" y2="245"/>
+            <line class="gridline" x1="40" y1="207.5" x2="443.33" y2="207.5"/>
+            <line class="gridline" x1="40" y1="170" x2="443.33" y2="170"/>
+            <line class="gridline" x1="40" y1="132.5" x2="443.33" y2="132.5"/>
+            <line class="gridline" x1="40" y1="95" x2="443.33" y2="95"/>
+            <line class="gridline" x1="40" y1="57.5" x2="443.33" y2="57.5"/>
+            <line class="gridline" x1="40" y1="20" x2="443.33" y2="20"/>
+          </g>
+
+          <polygon class="envelope-poly"
+            points="76.67,320 76.67,189.4 223.33,38.75 443.33,38.75 443.33,320" />
+
+          <polygon class="utility-poly"
+            points="76.67,320 76.67,170 333.33,170 333.33,320" />
+
+          <text class="axis-label" x="40"     y="335" text-anchor="middle">82</text>
+          <text class="axis-label" x="76.67"  y="335" text-anchor="middle">83</text>
+          <text class="axis-label" x="113.33" y="335" text-anchor="middle">84</text>
+          <text class="axis-label" x="150"    y="335" text-anchor="middle">85</text>
+          <text class="axis-label" x="186.67" y="335" text-anchor="middle">86</text>
+          <text class="axis-label" x="223.33" y="335" text-anchor="middle">87</text>
+          <text class="axis-label" x="260"    y="335" text-anchor="middle">88</text>
+          <text class="axis-label" x="296.67" y="335" text-anchor="middle">89</text>
+          <text class="axis-label" x="333.33" y="335" text-anchor="middle">90</text>
+          <text class="axis-label" x="370"    y="335" text-anchor="middle">91</text>
+          <text class="axis-label" x="406.67" y="335" text-anchor="middle">92</text>
+          <text class="axis-label" x="443.33" y="335" text-anchor="middle">93</text>
+
+          <text class="axis-label" x="35" y="323" text-anchor="end">1600</text>
+          <text class="axis-label" x="35" y="285.5" text-anchor="end">1700</text>
+          <text class="axis-label" x="35" y="248" text-anchor="end">1800</text>
+          <text class="axis-label" x="35" y="210.5" text-anchor="end">1900</text>
+          <text class="axis-label" x="35" y="173" text-anchor="end">2000</text>
+          <text class="axis-label" x="35" y="135.5" text-anchor="end">2100</text>
+          <text class="axis-label" x="35" y="98" text-anchor="end">2200</text>
+          <text class="axis-label" x="35" y="60.5" text-anchor="end">2300</text>
+          <text class="axis-label" x="35" y="23" text-anchor="end">2400</text>
+
+          <text class="cat-label" x="320" y="80">Normal Category</text>
+          <text class="cat-label" x="155" y="245">Utility Category</text>
+
+          <text class="axis-title" x="240" y="354" text-anchor="middle">Inches Aft of Datum</text>
+
+          <circle id="cg-marker" class="marker-dot" cx="-20" cy="-20" r="6"/>
+        </svg>
+      </div>
+
+      <div class="notes">
+        <div class="ref-title">Additional Notes</div>
+        <ul>
+          <li>Rear seats <em>and</em> both baggage areas must be empty for utility category operations.</li>
+          <li>Max ramp / takeoff weight: <b>2,325 lb</b>. Max baggage: <b>200 lb</b>. Usable fuel: <b>48 gal (288 lb)</b>.</li>
+          <li>This worksheet does not replace the POH. Always cross-check with current performance charts.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- COLUMN 3: Aircraft Performance -->
+    <div>
+      <div class="h2">Aircraft Performance</div>
+      <table class="perf-tbl">
+        <thead>
+          <tr>
+            <th>Category</th>
+            <th style="width:22%">Raw</th>
+            <th style="width:22%">×1.5</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="perf-label">Takeoff Distance Over 50 ft Obstacle <span class="hint">Highest DA airport</span></td>
+            <td><input type="number" id="raw_to" placeholder="ft" step="1"></td>
+            <td class="computed" id="safe_to">—</td>
+          </tr>
+          <tr>
+            <td class="perf-label">Cruise HP % &amp; Fuel Burn <span class="hint">e.g. 65% · 8.0 gph</span></td>
+            <td><input type="text" id="raw_cruise" placeholder="% / gph"></td>
+            <td class="na">—</td>
+          </tr>
+          <tr>
+            <td class="perf-label">Endurance <span class="hint">Hours of fuel</span></td>
+            <td><input type="number" id="raw_endurance" placeholder="hrs" step="0.1"></td>
+            <td class="na">—</td>
+          </tr>
+          <tr>
+            <td class="perf-label">Glide Range at <input type="number" id="glide_alt" placeholder="alt" step="100" style="width:54px;display:inline-block;border:1px solid var(--rule-2);background:#fff;text-align:right;font-size:11px;padding:0 3px;border-radius:2px;"> ft</td>
+            <td><input type="number" id="raw_glide" placeholder="nm" step="0.1"></td>
+            <td class="na">N/A</td>
+          </tr>
+          <tr>
+            <td class="perf-label">Landing Distance Over 50 ft Obstacle <span class="hint">Highest DA airport</span></td>
+            <td><input type="number" id="raw_ldg" placeholder="ft" step="1"></td>
+            <td class="computed" id="safe_ldg">—</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <footer class="colophon">
+    <span>N32069 · Piper Warrior · Greenville Aviation</span>
+    <span>For internal use only — not a substitute for the POH</span>
+  </footer>
+</div>
+
+<script>
+  const ARM = {
+    empty: 87.24, oil: 27.5, front: 80.5, rear: 118.1, bag: 142.8, fuel: 95
+  };
+  const MAX_TOW = 2325;
+  const MAX_BAG = 200;
+  const MAX_FUEL = 288;
+  const MAX_OIL = 15;
+
+  const fmt = (n, d=2) => Number(n).toLocaleString('en-US', { minimumFractionDigits: d, maximumFractionDigits: d });
+  const val = id => {
+    const v = parseFloat(document.getElementById(id).value);
+    return isNaN(v) ? 0 : v;
+  };
+
+  function recompute() {
+    const wEmpty = val('w_empty');
+    const wOil   = val('w_oil');
+    const wFront = val('w_front');
+    const wRear  = val('w_rear');
+    const wBag   = val('w_bag');
+    const wFuel  = val('w_fuel');
+
+    const mEmpty = wEmpty * ARM.empty;
+    const mOil   = wOil   * ARM.oil;
+    const mFront = wFront * ARM.front;
+    const mRear  = wRear  * ARM.rear;
+    const mBag   = wBag   * ARM.bag;
+    const mFuel  = wFuel  * ARM.fuel;
+
+    document.getElementById('m_empty').textContent = fmt(mEmpty);
+    document.getElementById('m_oil').textContent   = wOil   ? fmt(mOil)   : '—';
+    document.getElementById('m_front').textContent = wFront ? fmt(mFront) : '—';
+    document.getElementById('m_rear').textContent  = wRear  ? fmt(mRear)  : '—';
+    document.getElementById('m_bag').textContent   = wBag   ? fmt(mBag)   : '—';
+    document.getElementById('m_fuel').textContent  = wFuel  ? fmt(mFuel)  : '—';
+
+    const zfw = wEmpty + wOil + wFront + wRear + wBag;
+    const zfwMom = mEmpty + mOil + mFront + mRear + mBag;
+    const zfwCG = zfw > 0 ? zfwMom / zfw : 0;
+
+    document.getElementById('zfw').textContent = fmt(zfw);
+    document.getElementById('zfw_mom').textContent = fmt(zfwMom);
+    document.getElementById('zfw_cg').textContent = 'CG = ' + fmt(zfwCG, 3);
+
+    const tow = zfw + wFuel;
+    const towMom = zfwMom + mFuel;
+    const towCG = tow > 0 ? towMom / tow : 0;
+
+    document.getElementById('tow').textContent = fmt(tow);
+    document.getElementById('tow_mom').textContent = fmt(towMom);
+    document.getElementById('tow_cg').textContent = 'CG = ' + fmt(towCG, 3);
+
+    updateMarker(towCG, tow);
+    updateStatus(tow, towCG, wBag, wFuel, wOil);
+    updatePerformance();
+  }
+
+  function updateMarker(cg, weight) {
+    const marker = document.getElementById('cg-marker');
+    if (weight <= 0 || !isFinite(cg)) {
+      marker.setAttribute('cx', -20);
+      marker.setAttribute('cy', -20);
+      return;
+    }
+    const x = 40 + (cg - 82) * 36.67;
+    const y = 320 - ((weight - 1600) / 100) * 37.5;
+    marker.setAttribute('cx', x);
+    marker.setAttribute('cy', y);
+    const inside = isInsideNormal(cg, weight);
+    marker.classList.toggle('outside', !inside);
+  }
+
+  function isInsideNormal(cg, weight) {
+    if (weight < 1600 || weight > 2325) return false;
+    if (cg < 83 || cg > 93) return false;
+    if (weight > 1950) {
+      const fwdLimit = 83 + ((weight - 1950) / (2325 - 1950)) * (87 - 83);
+      if (cg < fwdLimit) return false;
+    }
+    return true;
+  }
+
+  function updateStatus(tow, cg, bag, fuel, oil) {
+    const banner = document.getElementById('status');
+    const badge  = document.getElementById('status-badge');
+    const title  = document.getElementById('status-title');
+    const detail = document.getElementById('status-detail');
+
+    banner.classList.remove('ok','bad');
+
+    if (tow <= 1426.15) {
+      badge.textContent = 'READY';
+      title.textContent = 'Awaiting input';
+      detail.textContent = 'Enter occupant, baggage, and fuel weights above.';
+      return;
+    }
+
+    const issues = [];
+    if (tow > MAX_TOW) issues.push(`Over MTOW by ${fmt(tow - MAX_TOW, 1)} lb`);
+    if (bag > MAX_BAG) issues.push(`Baggage exceeds 200 lb max by ${fmt(bag - MAX_BAG, 1)} lb`);
+    if (fuel > MAX_FUEL) issues.push(`Fuel exceeds 288 lb (48 gal) max`);
+    if (oil > MAX_OIL) issues.push(`Oil exceeds 15 lb max`);
+    if (!isInsideNormal(cg, tow)) issues.push(`CG ${fmt(cg,2)} @ ${fmt(tow,0)} lb falls outside Normal Category envelope`);
+
+    if (issues.length) {
+      banner.classList.add('bad');
+      badge.textContent = 'OUT OF LIMITS';
+      title.textContent = 'Do not depart';
+      detail.textContent = issues.join(' · ');
+    } else {
+      banner.classList.add('ok');
+      badge.textContent = 'WITHIN LIMITS';
+      title.textContent = `Takeoff Wt ${fmt(tow,1)} lb · CG ${fmt(cg,3)} in`;
+      const margin = MAX_TOW - tow;
+      detail.textContent = `Within Normal Category envelope. Margin to MTOW: ${fmt(margin, 1)} lb.`;
+    }
+  }
+
+  function updatePerformance() {
+    const to = parseFloat(document.getElementById('raw_to').value);
+    const ldg = parseFloat(document.getElementById('raw_ldg').value);
+    document.getElementById('safe_to').textContent  = isNaN(to)  ? '—' : fmt(to  * 1.5, 0) + ' ft';
+    document.getElementById('safe_ldg').textContent = isNaN(ldg) ? '—' : fmt(ldg * 1.5, 0) + ' ft';
+  }
+
+  function resetForm() {
+    if (!confirm('Clear all entries? Empty weight will reset to 1426.15.')) return;
+    document.querySelectorAll('input[type="number"], input[type="text"]').forEach(el => {
+      if (el.id === 'w_empty') el.value = '1426.15';
+      else el.value = '';
+    });
+    recompute();
+  }
+
+  document.querySelectorAll('input').forEach(el => {
+    el.addEventListener('input', recompute);
+  });
+
+  recompute();
+</script>
+
+</body>
+</html>
