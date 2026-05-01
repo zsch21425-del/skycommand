@@ -24,6 +24,15 @@ html,body{width:100%;height:100%;overflow:hidden;background:#03060a;
   --cyan-screen: 178,224,212;
   --bezel-edge: 96,86,60;
 }
+/* Page is a 3-row stack: header / cockpit visual / softkey strip.
+   The cockpit photo is decorative — only the center MFD gets a live
+   weather panel placed over it. Side instruments and radio stack are
+   the photo's baked-in artwork; we don't draw on top of them. */
+body{
+  display:grid;
+  grid-template-rows:auto 1fr auto;
+  height:100vh;
+}
 /* Tabular numerics on every monospace */
 .val,.rv,.mfd-corner,.t-utc,.t-reg,.sprice,.schg,.stick,.e6-out,.wbig,.cur-stat,.ltbl td,.trfc-tbl td,.cnum,
 input.inp,.trn-fld input,.trn-fld select,.nta,.trn-stage-notes textarea{
@@ -32,7 +41,7 @@ input.inp,.trn-fld input,.trn-fld select,.nta,.trn-stage-notes textarea{
 
 /* ──────────────────── WINDSHIELD ──────────────────── */
 #windshield{
-  position:fixed;inset:0;z-index:1;overflow:hidden;
+  position:absolute;inset:0;z-index:1;overflow:hidden;
   /* Gradient brightness/warmth subtly responds to time-of-day variables */
   filter:saturate(calc(0.95 + var(--tod-warm)*0.2)) brightness(var(--tod-bright));
   background:
@@ -160,20 +169,22 @@ input.inp,.trn-fld input,.trn-fld select,.nta,.trn-stage-notes textarea{
   background:linear-gradient(to bottom,transparent 0%,rgba(220,228,232,.36) 55%,rgba(232,238,242,.7) 100%);
 }
 
-/* ──────────────────── COCKPIT SHELL (photo) ──────────────────── */
-/* The photo aspect is 1118:671 (~1.667). We anchor it bottom-center.
-   DESKTOP-FIRST: we cap height to ~70vh so the windshield/sky always
-   gets at least 30vh of breathing room above the glareshield.
-   The photo width is calculated from the height to preserve aspect
-   ratio. On ultra-wide viewports the photo centers and dark vignette
-   sky shows on the left/right framing. */
+/* ──────────────────── COCKPIT REGION ──────────────────── */
+/* The middle grid row. The windshield (clouds) fills the whole region;
+   the cockpit photo is anchored to the bottom of the region. The center
+   MFD live-weather panel is positioned absolutely on top of the photo. */
+#cockpitRegion{position:relative;overflow:hidden;min-height:0;z-index:1}
+
+/* The cockpit photo — purely visual, NO data overlays painted on top
+   of the photo's baked-in instruments (PFD, engine panel, radio stack).
+   Only the CENTER MFD gets replaced with a live weather panel. */
 #cockpit{
-  position:fixed;left:50%;bottom:0;
-  height:min(72vh, calc(100vw * 0.6));
+  position:absolute;left:50%;bottom:0;
+  height:100%;
   aspect-ratio:1118/671;
   transform:translateX(-50%);
   z-index:5;
-  perspective:900px;perspective-origin:50% 110%;
+  pointer-events:none; /* photo doesn't capture clicks */
 }
 #cockpitImg{
   position:absolute;inset:0;z-index:1;
@@ -210,29 +221,34 @@ input.inp,.trn-fld input,.trn-fld select,.nta,.trn-stage-notes textarea{
   #cockpitImg{background-size:100% 100%}
 }
 
-/* ──────────────────── MFD OVERLAYS (positioned on photo) ────────────
-   Coordinates measured from photo (1118x671):
-     Left  PFD : x 11.2-30.4%, y 61.3-81.8%
-     Center MFD: x 39.8-64.4%, y 61.3-81.5%
-     Right PFD : x 71.1-90.8%, y 61.3-81.8%
+/* ──────────────────── MFD LIVE PANELS ────────────────────
+   All three MFD bezels in the photo get fully-replaced with live
+   working displays — pixel-fitted so they look like the cockpit's
+   real screens. Underlying photo MFD imagery is completely hidden.
+     • Left  → Market Watch (stock tickers)
+     • Center → Aviation Weather (METAR + TAF)
+     • Right → Traffic Radar (OpenSky)
 */
 .mfd{
-  position:absolute;overflow:hidden;z-index:10;
+  position:absolute;overflow:hidden;z-index:10;pointer-events:auto;
   border:1px solid rgba(20,24,30,.85);
-  background:#050810;
+  background:#020308;
+  container-type:inline-size;
   box-shadow:
-    /* recessed bevel */
     0 0 0 1px rgba(120,110,80,.5) inset,
-    0 0 0 2px rgba(0,0,0,.5),
-    /* deep dark frame */
-    0 1px 0 rgba(180,150,90,.18),
-    0 -1px 0 rgba(0,0,0,.5),
-    /* phosphor cyan-green glow that animates with screen content */
-    0 0 14px rgba(0,160,200,.16) inset,
-    0 0 26px rgba(80,180,200,.22),
-    /* outer soft glow */
-    0 0 38px rgba(40,120,160,.3);
+    0 0 0 2px rgba(0,0,0,.7),
+    0 0 14px rgba(0,180,220,.18) inset,
+    0 0 22px rgba(80,200,220,.18),
+    0 0 32px rgba(40,140,180,.22);
 }
+/* Inner glass reflection — sells "screen behind curved glass" */
+.mfd::before{content:'';position:absolute;inset:0;z-index:31;pointer-events:none;
+  background:
+    linear-gradient(155deg,rgba(255,255,255,.07) 0%,transparent 22%,transparent 68%,rgba(255,255,255,.04) 100%),
+    linear-gradient(0deg,rgba(0,0,0,.18) 0%,transparent 14%,transparent 86%,rgba(0,0,0,.18) 100%),
+    radial-gradient(ellipse 70% 35% at 28% 12%,rgba(255,255,255,.06) 0%,transparent 60%);
+  mix-blend-mode:screen}
+/* Pixel-fit over each photo bezel. Coords measured from photo (1118x671). */
 #mfdL{left:11.2%;top:61.3%;width:19.2%;height:20.5%}
 #mfdC{left:39.8%;top:61.3%;width:24.6%;height:20.2%}
 #mfdR{left:71.1%;top:61.3%;width:19.7%;height:20.5%}
@@ -300,13 +316,9 @@ input.inp,.trn-fld input,.trn-fld select,.nta,.trn-stage-notes textarea{
     0 2px 8px rgba(0,0,0,.7),
     0 5px 14px rgba(0,0,0,.45)
 }
-/* Three clusters of 4 buttons — sit along the brushed-aluminum bezels
-   directly under each MFD. Wider than the screens above (overhang 1.5%
-   on each side) so the keys read as part of the panel hardware, with
-   visible gaps between clusters. */
-#skbar-L{left:9.7%;top:82.4%;width:22.2%;height:6.4%}
-#skbar-C{left:38.3%;top:82.1%;width:27.6%;height:6.4%}
-#skbar-R{left:69.6%;top:82.4%;width:22.7%;height:6.4%}
+/* On-photo bezel softkey rows — REMOVED from the layout. Soft-keys
+   now live in the strip beneath the cockpit; see #skStrip below. */
+#skbar-L,#skbar-C,#skbar-R{display:none !important}
 
 .sk{flex:1;min-width:0;height:100%;background:transparent;border:none;
   border-right:1px solid rgba(0,0,0,.78);
@@ -367,9 +379,10 @@ input.inp,.trn-fld input,.trn-fld select,.nta,.trn-stage-notes textarea{
 }
 
 /* ──────────────────── RADIO STACK OVERLAY ────────────────────
-   Sits over the center pedestal area below the center MFD. Brightened
-   amber readouts so it reads as actively powered hardware. */
-#radioOv{
+   REMOVED — the photo's baked-in radio stack stays as artwork; we
+   don't draw on top of it. Block kept hidden so the JS that updates
+   #rc1/#rc2 etc. doesn't crash on missing nodes. */
+#radioOv{display:none !important;
   position:absolute;left:38.3%;top:90.1%;width:27.6%;
   background:
     linear-gradient(180deg,rgba(10,12,16,.96),rgba(16,20,26,.98));
@@ -395,10 +408,10 @@ input.inp,.trn-fld input,.trn-fld select,.nta,.trn-stage-notes textarea{
 }
 
 /* ──────────────────── TOP BAR ────────────────────
-   Slim bezel strip mounted on the cockpit glareshield rather than a
-   floating page header. Lives ON the cockpit at top:0% so it reads as
-   an integrated label plate, not a webpage chrome bar. */
-#topBar{
+   REMOVED from the cockpit photo. Header info now lives in #pageHeader
+   above the photo (see header-strip section below). This block is
+   kept hidden so the JS that updates #tReg/#tUtc doesn't crash. */
+#topBar{display:none !important;
   position:absolute;top:1.4%;left:50%;transform:translateX(-50%);
   height:24px;padding:0 16px;z-index:60;
   display:flex;align-items:center;gap:18px;
@@ -765,6 +778,284 @@ hr.dv{border:none;border-top:1px solid rgba(255,255,255,.04);margin:11px 0}
 ::-webkit-scrollbar-thumb{background:rgba(168,138,76,.32);border-radius:4px}
 ::-webkit-scrollbar-thumb:hover{background:rgba(168,138,76,.55)}
 
+/* ──────────────────── PAGE HEADER STRIP ────────────────────
+   Top row of the page grid. Holds: callsign · UTC clock · date ·
+   Pilot Notepad button. Clean dark-mode bar — not cockpit-themed
+   since it sits OUTSIDE the cockpit photo. */
+#pageHeader{
+  display:flex;align-items:center;gap:18px;
+  padding:10px 22px;
+  background:linear-gradient(180deg,#0a0e15 0%,#070a10 100%);
+  border-bottom:1px solid rgba(168,138,76,.32);
+  box-shadow:0 1px 0 rgba(255,224,140,.08) inset, 0 2px 12px rgba(0,0,0,.6);
+  z-index:50;position:relative;
+}
+.ph-callsign{
+  font-family:'Inter',ui-sans-serif,sans-serif;font-weight:600;font-size:13px;
+  color:rgba(255,228,168,.95);letter-spacing:.22em;text-transform:uppercase;
+  text-shadow:0 0 6px rgba(255,196,76,.35);
+  display:flex;align-items:center;gap:11px;
+}
+.ph-callsign::before{content:'';display:inline-block;width:8px;height:8px;border-radius:50%;
+  background:#0fd87f;box-shadow:0 0 7px rgba(15,216,127,.85);
+  animation:pwrPulse 2.4s ease-in-out infinite}
+.ph-spacer{flex:1}
+.ph-clock{
+  font-family:'JetBrains Mono',ui-monospace,monospace;font-weight:500;font-size:15px;
+  color:rgba(178,224,212,.95);letter-spacing:.04em;
+  text-shadow:0 0 5px rgba(120,200,180,.45);
+  font-variant-numeric:tabular-nums;
+}
+.ph-date{
+  font-family:'Inter',ui-sans-serif,sans-serif;font-weight:500;font-size:12px;
+  color:rgba(178,200,210,.65);letter-spacing:.12em;text-transform:uppercase;
+}
+.ph-divider{width:1px;height:18px;background:rgba(168,138,76,.22)}
+/* Pilot Notepad — glossy blue pill in the header (matches the strip below) */
+.ph-notepad{
+  position:relative;
+  font-family:'Inter',ui-sans-serif,sans-serif;font-weight:600;font-size:12px;
+  color:#fff;letter-spacing:.12em;text-transform:uppercase;
+  padding:9px 22px;border:none;cursor:pointer;
+  border-radius:999px;
+  background:linear-gradient(180deg,#5e9bff 0%,#2563eb 50%,#1e4fc7 100%);
+  box-shadow:
+    /* chrome bezel */
+    0 0 0 2px #d8dce3,
+    0 0 0 3px #8d96a4,
+    /* outer drop shadow */
+    0 4px 10px rgba(30,79,199,.45),
+    0 1px 2px rgba(0,0,0,.5),
+    /* inner highlight & shadow */
+    inset 0 1px 0 rgba(255,255,255,.55),
+    inset 0 -2px 4px rgba(8,32,90,.55);
+  text-shadow:0 1px 1px rgba(0,0,0,.4);
+  transition:filter .14s,transform .08s;
+}
+.ph-notepad::after{
+  /* upper specular highlight */
+  content:'';position:absolute;left:8%;right:8%;top:3px;height:38%;
+  background:linear-gradient(180deg,rgba(255,255,255,.55),rgba(255,255,255,0));
+  border-radius:999px 999px 80% 80%/999px 999px 60% 60%;
+  pointer-events:none;
+}
+.ph-notepad:hover{filter:brightness(1.08) saturate(1.05)}
+.ph-notepad:active{transform:translateY(1px);
+  box-shadow:
+    0 0 0 2px #d8dce3,
+    0 0 0 3px #8d96a4,
+    0 1px 3px rgba(0,0,0,.5),
+    inset 0 -1px 0 rgba(255,255,255,.4),
+    inset 0 3px 6px rgba(8,32,90,.7)}
+
+/* ──────────────────── SOFTKEY STRIP (BELOW COCKPIT) ────────────────────
+   A row of 11 glossy blue pill buttons. Modern, NOT cockpit-themed —
+   sits beneath the cockpit photo as a clean control panel. */
+#skStrip{
+  display:flex;flex-wrap:wrap;justify-content:center;align-items:center;
+  gap:14px 16px;
+  padding:18px 24px 22px;
+  background:
+    radial-gradient(ellipse 100% 60% at 50% 0%,rgba(20,40,80,.18),transparent 70%),
+    linear-gradient(180deg,#080b12 0%,#04060a 100%);
+  border-top:1px solid rgba(168,138,76,.28);
+  box-shadow:0 -1px 0 rgba(255,224,140,.06) inset, 0 -3px 14px rgba(0,0,0,.55);
+  z-index:50;position:relative;
+}
+.skbtn{
+  position:relative;
+  font-family:'Inter',ui-sans-serif,sans-serif;font-weight:600;font-size:12.5px;
+  color:#fff;letter-spacing:.06em;
+  padding:11px 22px;min-width:140px;
+  border:none;cursor:pointer;
+  border-radius:999px;
+  background:linear-gradient(180deg,#5e9bff 0%,#2f72f0 38%,#1f5fdf 70%,#1944b9 100%);
+  box-shadow:
+    /* bright chrome bezel ring */
+    0 0 0 2px #e5e9ef,
+    0 0 0 3px #8b94a3,
+    /* drop shadow + soft reflected glow on the strip below */
+    0 6px 14px rgba(20,50,140,.5),
+    0 2px 4px rgba(0,0,0,.55),
+    /* inner top highlight + bottom inset shadow */
+    inset 0 1px 0 rgba(255,255,255,.6),
+    inset 0 -2px 5px rgba(8,28,86,.6);
+  text-shadow:0 1px 1px rgba(0,0,0,.35);
+  transition:filter .14s,transform .08s;
+  white-space:nowrap;
+}
+/* Upper specular highlight — concentrated on top third */
+.skbtn::after{
+  content:'';position:absolute;left:9%;right:9%;top:3px;height:42%;
+  background:linear-gradient(180deg,rgba(255,255,255,.6) 0%,rgba(255,255,255,.18) 60%,rgba(255,255,255,0) 100%);
+  border-radius:999px 999px 80% 80%/999px 999px 60% 60%;
+  pointer-events:none;
+}
+/* Tiny corner sparkle reflections, like the reference image */
+.skbtn::before{
+  content:'';position:absolute;left:6px;bottom:6px;width:7px;height:7px;border-radius:50%;
+  background:radial-gradient(circle,rgba(255,255,255,.85) 0%,rgba(255,255,255,0) 70%);
+  pointer-events:none;
+}
+.skbtn:hover{filter:brightness(1.08) saturate(1.06);
+  box-shadow:
+    0 0 0 2px #ecf0f5,
+    0 0 0 3px #99a3b3,
+    0 7px 16px rgba(40,90,200,.6),
+    0 2px 4px rgba(0,0,0,.55),
+    inset 0 1px 0 rgba(255,255,255,.65),
+    inset 0 -2px 5px rgba(8,28,86,.55);
+}
+.skbtn:active,.skbtn.on{transform:translateY(1px);
+  background:linear-gradient(180deg,#3672e6 0%,#1f5fdf 35%,#163fa6 70%,#102f80 100%);
+  box-shadow:
+    0 0 0 2px #d2d6dd,
+    0 0 0 3px #7a8392,
+    0 2px 5px rgba(0,0,0,.6),
+    inset 0 -1px 0 rgba(255,255,255,.35),
+    inset 0 3px 7px rgba(6,22,72,.8);
+}
+.skbtn.on{filter:brightness(1.04)}
+/* "Fresh data" indicator — small amber dot in the corner */
+.skbtn.fresh::before{
+  background:radial-gradient(circle,rgba(255,212,118,1) 0%,rgba(255,196,76,.6) 50%,rgba(255,196,76,0) 80%);
+  width:9px;height:9px;
+  box-shadow:0 0 6px rgba(255,196,76,.85);
+  animation:freshPulse 1.6s ease-in-out infinite;
+}
+@keyframes freshPulse{50%{box-shadow:0 0 12px rgba(255,196,76,1)}}
+
+/* ──────────────────── CENTER-MFD LIVE WEATHER PANEL ────────────────────
+   The visible content of #mfdC. Fits the photo's center MFD bezel.
+   Renders live KGMU METAR + TAF from aviationweather.gov in a
+   G1000-style glass cockpit display. Refreshes every 5 minutes. */
+#mfdC{background:#020308;cursor:pointer;border-radius:0}
+#mfdLiveWx{
+  position:absolute;inset:0;z-index:32;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 0%,rgba(0,160,200,.12),transparent 70%),
+    linear-gradient(180deg,#020812 0%,#040a14 100%);
+  display:flex;flex-direction:column;
+  font-family:'JetBrains Mono',ui-monospace,monospace;
+  color:#cfe6da;
+  padding:6%;
+  overflow:hidden;
+}
+#mfdLiveWx::before{
+  /* scanline texture */
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(0deg,
+    rgba(0,0,0,.18) 0px,rgba(0,0,0,.18) 1px,
+    transparent 1px,transparent 3px);
+  opacity:.65;
+}
+#mfdLiveWx::after{
+  /* subtle phosphor glow */
+  content:'';position:absolute;inset:0;pointer-events:none;
+  box-shadow:inset 0 0 22px rgba(0,180,220,.18);
+}
+.mfdwx-hdr{display:flex;justify-content:space-between;align-items:baseline;
+  font-size:max(7px,.9cqw);letter-spacing:.18em;text-transform:uppercase;
+  color:rgba(255,196,76,.88);font-weight:600;line-height:1;
+  border-bottom:1px solid rgba(255,196,76,.28);padding-bottom:4%;margin-bottom:4%;
+  text-shadow:0 0 4px rgba(255,196,76,.45)}
+.mfdwx-hdr .icao{color:#3edaf2;text-shadow:0 0 4px rgba(62,218,242,.6)}
+.mfdwx-hdr .cat{padding:1px 6px;border-radius:2px;font-weight:700;letter-spacing:.18em}
+.mfdwx-hdr .cat.VFR{background:rgba(15,216,127,.18);color:#0fd87f;border:1px solid rgba(15,216,127,.55)}
+.mfdwx-hdr .cat.MVFR{background:rgba(62,218,242,.18);color:#3edaf2;border:1px solid rgba(62,218,242,.55)}
+.mfdwx-hdr .cat.IFR{background:rgba(240,96,96,.18);color:#f06060;border:1px solid rgba(240,96,96,.55)}
+.mfdwx-hdr .cat.LIFR{background:rgba(224,64,224,.18);color:#e040e0;border:1px solid rgba(224,64,224,.55)}
+.mfdwx-grid{display:grid;grid-template-columns:1fr 1fr;column-gap:8%;row-gap:3%;
+  font-size:max(8px,1cqw);line-height:1.25;flex:1}
+.mfdwx-row{display:flex;justify-content:space-between;align-items:baseline;gap:6px}
+.mfdwx-row .k{color:rgba(180,210,200,.6);font-size:max(6.5px,.85cqw);letter-spacing:.12em;
+  text-transform:uppercase;font-family:'Inter',ui-sans-serif,sans-serif;font-weight:500}
+.mfdwx-row .v{color:#cfe6da;font-weight:500;letter-spacing:.02em;font-variant-numeric:tabular-nums}
+.mfdwx-row .v.amb{color:#ffd476;text-shadow:0 0 4px rgba(255,196,76,.4)}
+.mfdwx-row .v.cyn{color:#3edaf2;text-shadow:0 0 4px rgba(62,218,242,.45)}
+.mfdwx-row .v.grn{color:#0fd87f;text-shadow:0 0 4px rgba(15,216,127,.45)}
+.mfdwx-row .v.red{color:#f06060;text-shadow:0 0 4px rgba(240,96,96,.45)}
+.mfdwx-raw{margin-top:auto;padding-top:4%;border-top:1px dashed rgba(255,196,76,.22);
+  font-size:max(6.5px,.85cqw);letter-spacing:.02em;line-height:1.35;
+  color:rgba(255,212,118,.72);word-break:break-all;
+  text-shadow:0 0 3px rgba(255,196,76,.3);max-height:30%;overflow:hidden}
+.mfdwx-raw .lbl{color:rgba(255,196,76,.55);letter-spacing:.18em;
+  text-transform:uppercase;font-family:'Inter',ui-sans-serif,sans-serif;
+  font-weight:600;display:block;margin-bottom:2px;font-size:max(6px,.7cqw)}
+.mfdwx-loading{display:flex;align-items:center;justify-content:center;flex:1;
+  color:rgba(180,210,200,.45);font-size:max(8px,1cqw);letter-spacing:.2em;
+  text-transform:uppercase;font-family:'Inter',ui-sans-serif,sans-serif}
+.mfdwx-err{color:#f06060;text-shadow:0 0 4px rgba(240,96,96,.5)}
+@container (max-width: 240px){
+  .mfdwx-grid{grid-template-columns:1fr 1fr;column-gap:5%}
+  .mfdwx-raw{display:none}
+}
+
+/* ──────────────────── LEFT MFD · MARKET WATCH ──────────────────── */
+#mfdLiveStocks{
+  position:absolute;inset:0;z-index:32;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 0%,rgba(0,160,200,.12),transparent 70%),
+    linear-gradient(180deg,#020812 0%,#040a14 100%);
+  display:flex;flex-direction:column;
+  font-family:'JetBrains Mono',ui-monospace,monospace;
+  color:#cfe6da;padding:6%;overflow:hidden;
+}
+#mfdLiveStocks::before{content:'';position:absolute;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(0deg,rgba(0,0,0,.18) 0,rgba(0,0,0,.18) 1px,transparent 1px,transparent 3px);opacity:.65}
+#mfdLiveStocks::after{content:'';position:absolute;inset:0;pointer-events:none;
+  box-shadow:inset 0 0 22px rgba(0,180,220,.18)}
+.mfdst-hdr{display:flex;justify-content:space-between;align-items:baseline;
+  font-size:max(7px,.85cqw);letter-spacing:.18em;text-transform:uppercase;
+  color:rgba(255,196,76,.88);font-weight:600;line-height:1;
+  border-bottom:1px solid rgba(255,196,76,.28);padding-bottom:4%;margin-bottom:3%;
+  text-shadow:0 0 4px rgba(255,196,76,.45)}
+.mfdst-hdr .mode{color:rgba(178,224,212,.72);letter-spacing:.16em}
+.mfdst-list{display:flex;flex-direction:column;gap:2.4%;flex:1;overflow:hidden}
+.mfdst-row{display:grid;grid-template-columns:auto 1fr auto;gap:6%;align-items:baseline}
+.mfdst-row .sym{font-weight:700;font-size:max(7.5px,.95cqw);letter-spacing:.06em;
+  color:rgba(255,212,118,.95);text-shadow:0 0 4px rgba(255,196,76,.4);font-variant-numeric:tabular-nums}
+.mfdst-row .px{font-size:max(8px,1cqw);color:#cfe6da;font-variant-numeric:tabular-nums;text-align:right}
+.mfdst-row .ch{font-size:max(7px,.85cqw);font-variant-numeric:tabular-nums;text-align:right;letter-spacing:.02em}
+.mfdst-row .ch.up{color:#0fd87f;text-shadow:0 0 4px rgba(15,216,127,.45)}
+.mfdst-row .ch.dn{color:#f06060;text-shadow:0 0 4px rgba(240,96,96,.45)}
+
+/* ──────────────────── RIGHT MFD · TRAFFIC RADAR ──────────────────── */
+#mfdLiveTrfc{
+  position:absolute;inset:0;z-index:32;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 0%,rgba(0,160,200,.12),transparent 70%),
+    linear-gradient(180deg,#020812 0%,#040a14 100%);
+  display:flex;flex-direction:column;
+  font-family:'JetBrains Mono',ui-monospace,monospace;
+  color:#cfe6da;padding:5%;overflow:hidden;
+}
+#mfdLiveTrfc::before{content:'';position:absolute;inset:0;pointer-events:none;
+  background:repeating-linear-gradient(0deg,rgba(0,0,0,.18) 0,rgba(0,0,0,.18) 1px,transparent 1px,transparent 3px);opacity:.65}
+#mfdLiveTrfc::after{content:'';position:absolute;inset:0;pointer-events:none;
+  box-shadow:inset 0 0 22px rgba(0,180,220,.18)}
+.mfdtf-hdr{display:flex;justify-content:space-between;align-items:baseline;
+  font-size:max(7px,.85cqw);letter-spacing:.18em;text-transform:uppercase;
+  color:rgba(255,196,76,.88);font-weight:600;line-height:1;
+  border-bottom:1px solid rgba(255,196,76,.28);padding-bottom:3%;margin-bottom:3%;
+  text-shadow:0 0 4px rgba(255,196,76,.45)}
+.mfdtf-hdr .icao{color:#3edaf2;text-shadow:0 0 4px rgba(62,218,242,.6)}
+.mfdtf-scope{position:relative;flex:1;display:flex;align-items:center;justify-content:center}
+.mfdtf-scope canvas{max-width:100%;max-height:100%;display:block;background:rgba(0,0,0,.55);
+  border-radius:50%}
+.mfdtf-tbl{margin-top:3%;font-size:max(6.5px,.78cqw);line-height:1.3;
+  display:grid;grid-template-columns:1.3fr 1fr 1fr 1fr;gap:2px 6px;max-height:30%;overflow:hidden}
+.mfdtf-tbl .h{color:rgba(255,196,76,.6);letter-spacing:.14em;text-transform:uppercase;
+  font-family:'Inter',ui-sans-serif,sans-serif;font-weight:600;font-size:max(5.5px,.65cqw)}
+.mfdtf-tbl .c{color:#cfe6da;font-variant-numeric:tabular-nums}
+.mfdtf-tbl .c.cs{color:rgba(255,212,118,.95)}
+.mfdtf-empty{flex:1;display:flex;align-items:center;justify-content:center;
+  color:rgba(180,210,200,.4);font-size:max(7.5px,.95cqw);letter-spacing:.18em;
+  text-transform:uppercase;font-family:'Inter',ui-sans-serif,sans-serif}
+@container (max-width: 200px){
+  .mfdtf-tbl{display:none}
+}
+
 /* ──────────────────── DESKTOP COMFORT TUNING ────────────────────
    Bumps panel content typography to readable desktop sizes.
    Mobile keeps the smaller compact sizing. */
@@ -848,80 +1139,94 @@ hr.dv{border:none;border-top:1px solid rgba(255,255,255,.04);margin:11px 0}
 </head>
 <body>
 
-<!-- ── WINDSHIELD (above the cockpit) ── -->
-<div id="windshield">
-  <div class="cl" id="cl-far"></div>
-  <div class="cl" id="cl-mid"></div>
-  <div class="cl" id="cl-near"></div>
-  <div class="cl" id="cl-fast"></div>
-  <div class="cl" id="cl-fg"></div>
-  <div id="cl-wisp1"></div>
-  <div id="cl-wisp2"></div>
-  <div id="horizon"></div>
+<!-- ── PAGE HEADER STRIP ── -->
+<div id="pageHeader">
+  <span class="ph-callsign" id="tReg">N-529TF · SKYCOMMAND</span>
+  <span class="ph-spacer"></span>
+  <span class="ph-date" id="phDate"></span>
+  <span class="ph-divider"></span>
+  <span class="ph-clock" id="tUtc">00:00:00Z</span>
+  <span class="ph-divider"></span>
+  <button class="ph-notepad" onclick="openPanel('memo',this)">Pilot Notepad</button>
 </div>
 
-<!-- ── COCKPIT SHELL (photo + overlays) ── -->
-<div id="cockpit">
-  <div id="cockpitImg"></div>
-  <div class="mfd" id="mfdL">
-    <span class="mfd-tag">PFD</span>
-    <span class="mfd-corner tr" id="mL-tr">N-529TF</span>
-    <span class="mfd-corner bl" id="mL-bl">FL410</span>
-    <span class="mfd-corner br" id="mL-br">152 KT</span>
-    <canvas id="cv-mfdL"></canvas>
-    <div class="mfd-glass"></div>
+<!-- ── COCKPIT REGION (windshield clouds + photo + 3 live MFD panels) ── -->
+<div id="cockpitRegion">
+  <!-- Animated windshield: clouds drift behind the cockpit photo -->
+  <div id="windshield">
+    <div class="cl" id="cl-far"></div>
+    <div class="cl" id="cl-mid"></div>
+    <div class="cl" id="cl-near"></div>
+    <div class="cl" id="cl-fast"></div>
+    <div class="cl" id="cl-fg"></div>
+    <div id="cl-wisp1"></div>
+    <div id="cl-wisp2"></div>
+    <div id="horizon"></div>
   </div>
-  <div class="mfd" id="mfdC">
-    <span class="mfd-tag" id="mC-tag">MFD · MAP</span>
-    <span class="mfd-corner tr" id="mC-tr">KGMU</span>
-    <span class="mfd-corner bl" id="mC-bl">SCAN</span>
-    <span class="mfd-corner br" id="mC-br">40 NM</span>
-    <canvas id="cv-mfdC"></canvas>
-    <div class="mfd-glass"></div>
-  </div>
-  <div class="mfd" id="mfdR">
-    <span class="mfd-tag">SYS · ENG</span>
-    <span class="mfd-corner tr" id="mR-tr">N1 88%</span>
-    <span class="mfd-corner bl" id="mR-bl">FUEL</span>
-    <span class="mfd-corner br" id="mR-br">8420 LB</span>
-    <canvas id="cv-mfdR"></canvas>
-    <div class="mfd-glass"></div>
-  </div>
+  <div id="cockpit">
+    <div id="cockpitImg"></div>
+    <!-- LEFT MFD · MARKET WATCH -->
+    <div class="mfd" id="mfdL" onclick="openPanel('market',document.querySelector('[data-panel=market]'))">
+      <div id="mfdLiveStocks">
+        <div class="mfdst-hdr"><span>MARKET</span><span class="mode" id="stMode">DEMO</span></div>
+        <div class="mfdst-list" id="stList"></div>
+      </div>
+    </div>
+    <!-- CENTER MFD · LIVE WEATHER -->
+    <div class="mfd" id="mfdC" onclick="openPanel('wxob',document.querySelector('[data-panel=wxob]'))">
+      <div id="mfdLiveWx">
+        <div class="mfdwx-hdr"><span>WEATHER · <span class="icao" id="wxIcaoLbl">KGMU</span></span><span class="cat" id="wxCat">—</span></div>
+        <div class="mfdwx-loading" id="wxBody">CONNECTING…</div>
+      </div>
+    </div>
+    <!-- RIGHT MFD · TRAFFIC RADAR -->
+    <div class="mfd" id="mfdR" onclick="openPanel('trfc',document.querySelector('[data-panel=trfc]'))">
+      <div id="mfdLiveTrfc">
+        <div class="mfdtf-hdr"><span>TRAFFIC · <span class="icao" id="tfIcaoLbl">KGMU</span></span><span id="tfCount">— TGT</span></div>
+        <div class="mfdtf-scope"><canvas id="mfdTfScope" width="220" height="220"></canvas></div>
+        <div class="mfdtf-tbl" id="tfTbl"><div class="h">CALL</div><div class="h">ALT</div><div class="h">SPD</div><div class="h">DIST</div></div>
+      </div>
+    </div>
 
-  <!-- Soft-key bezel rows: 4 per MFD (12 total) -->
-  <div class="skbar" id="skbar-L">
-    <button class="sk" onclick="openPanel('wxob',this)">WXOB</button>
-    <button class="sk" onclick="openPanel('arpt',this)">ARPT</button>
-    <button class="sk" onclick="openPanel('trfc',this)">TRFC</button>
-    <button class="sk" onclick="openPanel('notm',this)">NOTM</button>
+    <!-- Hidden compatibility nodes — old JS still references these IDs.
+         Kept off-screen so getElementById() doesn't throw. -->
+    <span id="mL-tr" style="display:none"></span>
+    <span id="mL-bl" style="display:none"></span>
+    <span id="mL-br" style="display:none"></span>
+    <span id="mC-tag" style="display:none"></span>
+    <span id="mC-tr" style="display:none"></span>
+    <span id="mC-bl" style="display:none"></span>
+    <span id="mC-br" style="display:none"></span>
+    <span id="mR-tr" style="display:none"></span>
+    <span id="mR-bl" style="display:none"></span>
+    <span id="mR-br" style="display:none"></span>
+    <canvas id="cv-mfdL" style="display:none"></canvas>
+    <canvas id="cv-mfdC" style="display:none"></canvas>
+    <canvas id="cv-mfdR" style="display:none"></canvas>
+    <div id="radioOv">
+      <div class="rr"><span class="ri">COM1</span><span class="rv" id="rc1">122.800</span></div>
+      <div class="rr"><span class="ri">COM2</span><span class="rv" id="rc2">118.300</span></div>
+      <div class="rr"><span class="ri">NAV1</span><span class="rv" id="rn1">109.90</span></div>
+      <div class="rr"><span class="ri">NAV2</span><span class="rv" id="rn2">113.40</span></div>
+      <div class="rr"><span class="ri">XPDR</span><span class="rv" id="rxp">1200</span></div>
+    </div>
+    <div id="topBar"><span class="t-reg"></span><span class="t-utc"></span></div>
   </div>
-  <div class="skbar" id="skbar-C">
-    <button class="sk" onclick="openPanel('e6b',this)">E6B</button>
-    <button class="sk" onclick="openPanel('crny',this)">CRNY</button>
-    <button class="sk" onclick="openPanel('wbal',this)">WBAL</button>
-    <button class="sk" onclick="openPanel('memo',this)">MEMO</button>
-  </div>
-  <div class="skbar" id="skbar-R">
-    <button class="sk" onclick="openPanel('market',this)">MKTW</button>
-    <button class="sk" onclick="openPanel('budget',this)">BGET</button>
-    <button class="sk" onclick="openTrainingNotebook(this)">CERT</button>
-    <button class="sk" onclick="openPanel('logbk',this)">LGBK</button>
-  </div>
+</div>
 
-  <!-- Radio stack overlay -->
-  <div id="radioOv">
-    <div class="rr"><span class="ri">COM1</span><span class="rv" id="rc1">122.800</span></div>
-    <div class="rr"><span class="ri">COM2</span><span class="rv" id="rc2">118.300</span></div>
-    <div class="rr"><span class="ri">NAV1</span><span class="rv" id="rn1">109.90</span></div>
-    <div class="rr"><span class="ri">NAV2</span><span class="rv" id="rn2">113.40</span></div>
-    <div class="rr"><span class="ri">XPDR</span><span class="rv" id="rxp">1200</span></div>
-  </div>
-
-  <!-- Glareshield ID plate — sits on the cockpit hardware, not page chrome -->
-  <div id="topBar">
-    <span class="t-reg" id="tReg">N-529TF · SKYCOMMAND</span>
-    <span class="t-utc" id="tUtc">00:00:00Z</span>
-  </div>
+<!-- ── SOFT-KEY STRIP (below cockpit) ── -->
+<div id="skStrip">
+  <button class="skbtn" data-panel="wxob"   onclick="openPanel('wxob',this)">Aviation Weather</button>
+  <button class="skbtn" data-panel="arpt"   onclick="openPanel('arpt',this)">Airport Info</button>
+  <button class="skbtn" data-panel="trfc"   onclick="openPanel('trfc',this)">Traffic Radar</button>
+  <button class="skbtn" data-panel="notm"   onclick="openPanel('notm',this)">NOTAMs</button>
+  <button class="skbtn" data-panel="e6b"    onclick="openPanel('e6b',this)">E6B Calc</button>
+  <button class="skbtn" data-panel="crny"   onclick="openPanel('crny',this)">Currency</button>
+  <button class="skbtn" data-panel="wbal"   onclick="openPanel('wbal',this)">Weight &amp; Balance</button>
+  <button class="skbtn" data-panel="market" onclick="openPanel('market',this)">Market Watch</button>
+  <button class="skbtn" data-panel="budget" onclick="openPanel('budget',this)">Budget</button>
+  <button class="skbtn" data-panel="train"  onclick="openTrainingNotebook(this)">Flight Training</button>
+  <button class="skbtn" data-panel="logbk"  onclick="openPanel('logbk',this)">Logbook</button>
 </div>
 
 <!-- ── DATA OVERLAY (panel content) ── -->
@@ -1209,10 +1514,15 @@ if(!CFG.tlNight) CFG.tlNight=[];
 const SIM={alt:41000,ias:152,hdg:275,vs:0,bank:0,pitch:2,oat:-56,tat:-42,n1a:88.2,n1b:88.5,fuel:8420};
 const DPR=()=>window.devicePixelRatio||1;
 
-/* ── CLOCK ── */
+/* ── CLOCK + DATE ── */
 document.getElementById('tReg').textContent=CFG.registration+' · '+CFG.callsign;
-setInterval(()=>{const n=new Date(),p=v=>String(v).padStart(2,'0');
-  document.getElementById('tUtc').textContent=p(n.getUTCHours())+':'+p(n.getUTCMinutes())+':'+p(n.getUTCSeconds())+'Z';},1000);
+const _DATE_FMT=new Intl.DateTimeFormat('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'});
+function _tickClock(){
+  const n=new Date(),p=v=>String(v).padStart(2,'0');
+  document.getElementById('tUtc').textContent=p(n.getUTCHours())+':'+p(n.getUTCMinutes())+':'+p(n.getUTCSeconds())+'Z';
+  const d=document.getElementById('phDate'); if(d) d.textContent=_DATE_FMT.format(n);
+}
+_tickClock(); setInterval(_tickClock,1000);
 
 /* ── TIME-OF-DAY LIGHTING ──
    Drives CSS variables --tod-warm (0..1) and --tod-bright (0..1.05) on the root,
@@ -1234,18 +1544,251 @@ function applyTOD(){
 }
 applyTOD(); setInterval(applyTOD,5*60*1000);
 
-/* ── LAYOUT — size data overlay to fit between top bar and the cockpit ── */
+/* ── LAYOUT — overlays cover the area below the page header ── */
 function applyLayout(){
-  const W=window.innerWidth,H=window.innerHeight;
-  // Cockpit height comes from CSS (aspect ratio). Compute its rendered height to position dataOv just above it.
-  const ck=document.getElementById('cockpit').getBoundingClientRect();
+  const H=window.innerHeight;
+  const hdr=document.getElementById('pageHeader');
+  const top=hdr?hdr.getBoundingClientRect().bottom:0;
   const dov=document.getElementById('dataOv');
-  dov.style.top='24px'; dov.style.height=(H-24-(H-ck.top))+'px';
+  if(dov){dov.style.top=top+'px'; dov.style.height=(H-top)+'px';}
   const nb=document.getElementById('trnNotebook');
-  if(nb){nb.style.top='24px'; nb.style.height=(H-24-(H-ck.top))+'px';}
+  if(nb){nb.style.top=top+'px'; nb.style.height=(H-top)+'px';}
 }
 applyLayout();
-window.addEventListener('resize',()=>{applyLayout();drawAllMFDs();});
+window.addEventListener('resize',()=>{applyLayout(); try{drawAllMFDs()}catch(e){} refreshMfdTrfc(true);});
+
+/* ── LIVE MFD PANELS ────────────────────────────────────────────
+   Three independent refresh loops feed the three replacement
+   displays painted over the photo's MFD bezels. */
+
+/* === LEFT MFD · MARKET WATCH === */
+const _MKT_TICKERS=['SPY','QQQ','AAPL','MSFT','NVDA','BA'];
+let _mktDemoSeed=Date.now();
+function _demoQuote(sym,seed){
+  // Deterministic-ish pseudo-random walk so values feel "live" without being chaotic.
+  const base={SPY:528.41,QQQ:464.20,AAPL:198.36,MSFT:412.15,NVDA:118.92,BA:188.14}[sym]||100;
+  const t=(seed%600000)/600000;
+  const drift=Math.sin((sym.charCodeAt(0)+t*8)*1.7)*0.012 + Math.cos(t*4.2)*0.006;
+  const px=base*(1+drift);
+  const ch=drift*100;
+  return {px,ch};
+}
+async function refreshMfdStocks(){
+  const list=document.getElementById('stList'); if(!list) return;
+  const mode=document.getElementById('stMode');
+  const apiKey=(window.CFG?.finnhubKey)||(typeof FINNHUB_KEY!=='undefined'?FINNHUB_KEY:'');
+  let rows=[];
+  try{
+    if(apiKey){
+      const fetches=_MKT_TICKERS.map(s=>fetch(`https://finnhub.io/api/v1/quote?symbol=${s}&token=${apiKey}`).then(r=>r.json()).then(j=>({sym:s,px:j.c,ch:j.dp})));
+      rows=await Promise.all(fetches);
+      mode.textContent='LIVE';
+    } else throw new Error('no key');
+  } catch(e){
+    _mktDemoSeed=(_mktDemoSeed+937)|0;
+    rows=_MKT_TICKERS.map(s=>{const q=_demoQuote(s,_mktDemoSeed);return{sym:s,...q};});
+    mode.textContent='DEMO';
+  }
+  list.innerHTML=rows.map(r=>{
+    const cls=r.ch>=0?'up':'dn';
+    const pxStr=r.px.toFixed(2);
+    const chStr=(r.ch>=0?'+':'')+r.ch.toFixed(2)+'%';
+    return `<div class="mfdst-row"><span class="sym">${r.sym}</span><span class="px">${pxStr}</span><span class="ch ${cls}">${chStr}</span></div>`;
+  }).join('');
+}
+
+/* === CENTER MFD · LIVE WEATHER === */
+async function refreshMfdWx(){
+  const body=document.getElementById('wxBody'); if(!body) return;
+  const cat=document.getElementById('wxCat');
+  const icaoLbl=document.getElementById('wxIcaoLbl');
+  const icao=(window.CFG?.homeAirport||'KGMU').toUpperCase();
+  icaoLbl.textContent=icao;
+  if(!body.dataset.loaded) body.innerHTML='<div class="mfdwx-loading">CONNECTING…</div>';
+  try{
+    const[mr,tr]=await Promise.all([
+      fetch(`https://aviationweather.gov/api/data/metar?ids=${icao}&format=json`),
+      fetch(`https://aviationweather.gov/api/data/taf?ids=${icao}&format=json`)
+    ]);
+    const md=await mr.json(), td=await tr.json();
+    if(!md?.length){
+      body.innerHTML=`<div class="mfdwx-loading mfdwx-err">NO DATA · ${icao}</div>`;
+      cat.className='cat'; cat.textContent='—';
+      return;
+    }
+    const m=md[0];
+    const v=parseFloat(m.visib||'10');
+    const ceil=(m.clouds||[]).find(c=>['BKN','OVC','VV'].includes(c.cover));
+    const f=ceil?ceil.base:9999;
+    let category='VFR';
+    if(v<1||f<500) category='LIFR';
+    else if(v<3||f<1000) category='IFR';
+    else if(v<5||f<3000) category='MVFR';
+    cat.className='cat '+category; cat.textContent=category;
+    const clouds=(m.clouds||[]).map(c=>`${c.cover}${c.base?'@'+c.base:''}`).slice(0,3).join(' ')||'CLR';
+    const wind=`${String(m.wdir||0).padStart(3,'0')}°/${m.wspd||0}${m.wgst?'G'+m.wgst:''}KT`;
+    const temp=m.temp!=null?`${m.temp}°C`:'—';
+    const dewp=m.dewp!=null?`${m.dewp}°C`:'—';
+    const altim=m.altim?m.altim.toFixed(2):'—';
+    const tafLine=td?.[0]?.rawTAF||'';
+    body.dataset.loaded='1';
+    body.outerHTML=`<div class="mfdwx-grid" id="wxBody">
+      <div class="mfdwx-row"><span class="k">Wind</span><span class="v amb">${wind}</span></div>
+      <div class="mfdwx-row"><span class="k">Vis</span><span class="v cyn">${m.visib||'—'} SM</span></div>
+      <div class="mfdwx-row"><span class="k">Sky</span><span class="v">${clouds}</span></div>
+      <div class="mfdwx-row"><span class="k">Alt</span><span class="v amb">${altim}</span></div>
+      <div class="mfdwx-row"><span class="k">Temp</span><span class="v">${temp}</span></div>
+      <div class="mfdwx-row"><span class="k">Dewpt</span><span class="v">${dewp}</span></div>
+    </div>
+    <div class="mfdwx-raw"><span class="lbl">METAR</span>${m.rawOb||''}${tafLine?`<span class="lbl" style="margin-top:4px">TAF</span>${tafLine}`:''}</div>`;
+  } catch(e){
+    body.innerHTML='<div class="mfdwx-loading mfdwx-err">NETWORK</div>';
+    cat.className='cat'; cat.textContent='—';
+  }
+}
+
+/* === RIGHT MFD · LIVE TRAFFIC RADAR === */
+let _tfData=[];
+async function refreshMfdTrfc(skipFetch){
+  const cv=document.getElementById('mfdTfScope'); if(!cv) return;
+  const tbl=document.getElementById('tfTbl');
+  const cnt=document.getElementById('tfCount');
+  const icaoLbl=document.getElementById('tfIcaoLbl');
+  const icao=(window.CFG?.homeAirport||'KGMU').toUpperCase();
+  if(icaoLbl) icaoLbl.textContent=icao;
+  // Center coords for KGMU (default). If a different ICAO is set, it'll be looked up via aviationweather.
+  let centerLat=window._tfCtr?.lat, centerLon=window._tfCtr?.lon;
+  if(!skipFetch){
+    try{
+      if(!centerLat){
+        const apr=await fetch(`https://aviationweather.gov/api/data/airport?ids=${icao}&format=json`);
+        const arr=await apr.json();
+        if(arr?.[0]){ centerLat=arr[0].lat; centerLon=arr[0].lon; window._tfCtr={lat:centerLat,lon:centerLon};}
+      }
+      if(centerLat){
+        const range=0.8; // ±0.8° box ≈ ~50nm
+        const url=`https://opensky-network.org/api/states/all?lamin=${(centerLat-range).toFixed(3)}&lomin=${(centerLon-range).toFixed(3)}&lamax=${(centerLat+range).toFixed(3)}&lomax=${(centerLon+range).toFixed(3)}`;
+        const r=await fetch(url);
+        const j=await r.json();
+        _tfData=(j?.states||[]).filter(s=>s[5]!=null&&s[6]!=null).map(s=>({
+          cs:(s[1]||'').trim()||'-',lon:s[5],lat:s[6],altm:s[7]||0,
+          spdms:s[9]||0,hdg:s[10]||0
+        })).slice(0,12);
+      }
+    } catch(e){_tfData=[]}
+  }
+  // Draw scope
+  const ctx=cv.getContext('2d');
+  const W=cv.width,H=cv.height,cx=W/2,cy=H/2,R=Math.min(W,H)/2-4;
+  ctx.clearRect(0,0,W,H);
+  // Range rings
+  ctx.strokeStyle='rgba(120,200,180,.28)';ctx.lineWidth=1;
+  for(let k=1;k<=3;k++){ctx.beginPath();ctx.arc(cx,cy,R*k/3,0,Math.PI*2);ctx.stroke();}
+  // Crosshairs
+  ctx.beginPath();ctx.moveTo(cx-R,cy);ctx.lineTo(cx+R,cy);ctx.moveTo(cx,cy-R);ctx.lineTo(cx,cy+R);ctx.stroke();
+  // Cardinal labels
+  ctx.fillStyle='rgba(255,196,76,.55)';
+  ctx.font='bold 10px "JetBrains Mono",ui-monospace,monospace';ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText('N',cx,cy-R+8);ctx.fillText('S',cx,cy+R-8);ctx.fillText('E',cx+R-8,cy);ctx.fillText('W',cx-R+8,cy);
+  // Range ring labels
+  ctx.font='9px "JetBrains Mono",ui-monospace,monospace';ctx.fillStyle='rgba(120,200,180,.55)';
+  ctx.textAlign='left';ctx.fillText('50',cx+4,cy-R+4);
+  // Aircraft dots
+  if(centerLat&&_tfData.length){
+    const range=50; // nm half-width matching scope
+    _tfData.forEach(t=>{
+      const dy=(t.lat-centerLat)*60; // 1°lat ≈ 60nm
+      const dx=(t.lon-centerLon)*60*Math.cos(centerLat*Math.PI/180);
+      const dist=Math.sqrt(dx*dx+dy*dy);
+      if(dist>range) return;
+      const px=cx+dx/range*R;
+      const py=cy-dy/range*R;
+      // Heading vector
+      ctx.strokeStyle='rgba(255,196,76,.85)';ctx.lineWidth=1.5;
+      const hr=t.hdg*Math.PI/180;
+      ctx.beginPath();ctx.moveTo(px,py);ctx.lineTo(px+Math.sin(hr)*7,py-Math.cos(hr)*7);ctx.stroke();
+      // Dot
+      ctx.fillStyle='#ffd476';ctx.shadowBlur=6;ctx.shadowColor='rgba(255,196,76,.85)';
+      ctx.beginPath();ctx.arc(px,py,2.4,0,Math.PI*2);ctx.fill();ctx.shadowBlur=0;
+      // Callsign
+      ctx.font='9px "JetBrains Mono",ui-monospace,monospace';ctx.fillStyle='rgba(255,212,118,.85)';
+      ctx.textAlign='left';ctx.textBaseline='alphabetic';
+      ctx.fillText(t.cs.substring(0,5),px+4,py-3);
+    });
+  }
+  // Self triangle
+  ctx.fillStyle='#3edaf2';ctx.shadowBlur=6;ctx.shadowColor='rgba(62,218,242,.7)';
+  ctx.beginPath();ctx.moveTo(cx,cy-5);ctx.lineTo(cx-4,cy+4);ctx.lineTo(cx+4,cy+4);ctx.closePath();ctx.fill();ctx.shadowBlur=0;
+  // Update target count and table
+  if(cnt) cnt.textContent=`${_tfData.length} TGT`;
+  if(tbl){
+    let html='<div class="h">CALL</div><div class="h">ALT</div><div class="h">SPD</div><div class="h">DIST</div>';
+    if(centerLat){
+      const top=_tfData.map(t=>{
+        const dy=(t.lat-centerLat)*60, dx=(t.lon-centerLon)*60*Math.cos(centerLat*Math.PI/180);
+        return {...t,dist:Math.sqrt(dx*dx+dy*dy)};
+      }).sort((a,b)=>a.dist-b.dist).slice(0,4);
+      top.forEach(t=>{
+        html+=`<div class="c cs">${t.cs.substring(0,7)||'-'}</div>`;
+        html+=`<div class="c">${Math.round(t.altm*3.281).toLocaleString()}</div>`;
+        html+=`<div class="c">${Math.round(t.spdms*1.944)}</div>`;
+        html+=`<div class="c">${t.dist.toFixed(0)}</div>`;
+      });
+    }
+    tbl.innerHTML=html;
+  }
+}
+
+/* Kick off the live MFD refreshers */
+setTimeout(()=>{
+  refreshMfdStocks(); setInterval(refreshMfdStocks, 60*1000);
+  refreshMfdWx();     setInterval(refreshMfdWx,    5*60*1000);
+  refreshMfdTrfc();   setInterval(refreshMfdTrfc, 30*1000);
+  // Cloud rAF fallback — guarantee motion even if CSS animations are
+  // throttled or disabled (prefers-reduced-motion, brave throttling, etc.).
+  // We measure each cloud layer's CSS animation and, if it appears stuck,
+  // drive the transform manually.
+  _hardenCloudAnim();
+}, 800);
+
+function _hardenCloudAnim(){
+  const layers=[
+    {id:'cl-far',  speed: 200},  // px per second baseline
+    {id:'cl-mid',  speed: 360},
+    {id:'cl-near', speed: 620},
+    {id:'cl-fast', speed: 920},
+    {id:'cl-fg',   speed:1380}
+  ];
+  // Probe: are CSS animations actually advancing?
+  const probeId='cl-fg';
+  const el=document.getElementById(probeId); if(!el) return;
+  let prev=getComputedStyle(el).transform;
+  setTimeout(()=>{
+    const now=getComputedStyle(el).transform;
+    if(now===prev){
+      // Animation is not advancing — drive it manually with requestAnimationFrame.
+      // Disable the CSS animation to avoid fighting with our transforms.
+      layers.forEach(L=>{const e=document.getElementById(L.id); if(e){e.style.animation='none'; L.x=0;}});
+      let last=performance.now();
+      function step(now){
+        const dt=(now-last)/1000; last=now;
+        layers.forEach(L=>{
+          const e=document.getElementById(L.id); if(!e) return;
+          L.x=(L.x||0)-L.speed*dt;
+          // Reset when one full pattern-width has scrolled past
+          const w=e.getBoundingClientRect().width;
+          if(L.x<-w/2) L.x+=w/2;
+          e.style.transform=`translate3d(${L.x.toFixed(1)}px,0,0)`;
+        });
+        requestAnimationFrame(step);
+      }
+      requestAnimationFrame(step);
+      window.__cloudFallback=true;
+    } else {
+      window.__cloudFallback=false;
+    }
+  }, 1500);
+}
 
 /* ───────────────── MFD CANVASES ─────────────────
    We render the three MFDs procedurally on canvas, sized to their
@@ -2087,12 +2630,11 @@ async function fetchWx(){
     const md=await mr.json(),td=await tr.json();
     stat.textContent='RECEIVED';stat.style.color='rgba(0,195,135,.85)';
     CFG.homeAirport=icao;LS.set('cfg',CFG);
-    renderWx(md,td,icao);
     mfdCText={top:icao,bot:'WX',label:'WX · '+icao}; drawMFDC();
     markFresh('WXOB');setTimeout(()=>clearFresh('WXOB'),12000);
   }catch(e){
     stat.textContent='CORS/NETWORK ERROR';stat.style.color='rgba(210,70,70,.85)';
-    document.getElementById('wxDisp').innerHTML=`<div style="color:rgba(210,70,70,.45);font-family:'Inter',ui-sans-serif,system-ui,sans-serif;font-size:8px;letter-spacing:.14em;text-transform:uppercase;margin-top:14px">
+    document.getElementById('wxDisp').innerHTML=`<div style="color:rgba(210,70,70,.45);font-family:'Inter',ui-sans-serif,sans-serif;font-size:8px;letter-spacing:.14em;text-transform:uppercase;margin-top:14px">
       Unable to reach aviationweather.gov.<br>Open via a web server (VS Code Live Server, Python http.server) to bypass CORS restrictions on file:// URLs.</div>`;
   }
 }
@@ -2104,7 +2646,7 @@ function flightCat(m){
 }
 function renderWx(data,tafData,icao){
   const disp=document.getElementById('wxDisp');
-  if(!data?.length){disp.innerHTML=`<div style="color:rgba(180,140,75,.5);font-family:'Inter',ui-sans-serif,system-ui,sans-serif;font-size:8px;letter-spacing:.14em;text-transform:uppercase;margin-top:14px">NO METAR FOR ${icao}</div>`;return;}
+  if(!data?.length){disp.innerHTML=`<div style="color:rgba(180,140,75,.5);font-family:'Inter',ui-sans-serif,sans-serif;font-size:8px;letter-spacing:.14em;text-transform:uppercase;margin-top:14px">NO METAR FOR ${icao}</div>`;return;}
   const m=data[0],[cat,catCol]=flightCat(m);
   const clouds=(m.clouds||[]).map(c=>`${c.cover}@${c.base}FT`).join('  ')||'SKY CLR';
   disp.innerHTML=`
@@ -2410,6 +2952,7 @@ function calcXWind(){
   const ws=parseFloat(document.getElementById('cwSpd').value);
   const out=document.getElementById('cwOut'),sub=document.getElementById('cwSub');
   if([rwy,wd,ws].some(isNaN)){sub.textContent='ENTER RUNWAY & WIND';return;}
+  const ang=((wd-rwy+540)%360-180)*Math.PI/180;
   const xw=Math.round(Math.abs(ws*Math.sin(ang))*10)/10;
   const hw=Math.round(ws*Math.cos(ang)*10)/10;
   const side=Math.sin(ang)>=0?'R':'L';
