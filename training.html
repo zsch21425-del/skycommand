@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SkyCommand · Career Pathway</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root { --amber:#fbbf24; --cyan:#38bdf8; --green:#22c55e; --red:#ef4444; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  html, body { width:100%; min-height:100%; background:#06080d; color:#e7eef9; font-family:'Inter',system-ui,sans-serif; -webkit-font-smoothing:antialiased; }
+  body {
+    background:
+      radial-gradient(ellipse at top, rgba(56,189,248,.08), transparent 60%),
+      radial-gradient(ellipse at bottom, rgba(251,191,36,.04), transparent 60%),
+      linear-gradient(180deg, #0a1322 0%, #06080d 100%);
+    min-height:100vh;
+    padding:0 0 60px;
+  }
+  .topbar {
+    display:flex; align-items:center; gap:14px;
+    padding:18px 28px;
+    border-bottom:1px solid rgba(56,189,248,.18);
+    background:linear-gradient(180deg, rgba(8,14,24,.75), rgba(4,8,14,.55));
+    backdrop-filter:blur(10px);
+    position:sticky; top:0; z-index:10;
+  }
+  .back-btn {
+    display:inline-flex; align-items:center; gap:8px;
+    background:linear-gradient(180deg,#1f2738,#141b2a);
+    color:var(--amber);
+    border:1px solid rgba(251,191,36,.4);
+    padding:8px 16px;
+    border-radius:3px;
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px;
+    letter-spacing:.16em;
+    text-decoration:none;
+    text-transform:uppercase;
+    text-shadow:0 0 5px rgba(251,191,36,.45);
+    box-shadow:0 2px 6px rgba(0,0,0,.5);
+  }
+  .back-btn:hover { color:#fff; }
+  .topbar-tag {
+    font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--cyan);
+    letter-spacing:.18em; padding:4px 10px;
+    border:1px solid rgba(56,189,248,.35); border-radius:2px; text-transform:uppercase;
+  }
+  .topbar h1 { flex:1; font-size:18px; font-weight:600; color:#fff; }
+  .container { max-width:1280px; margin:24px auto; padding:0 28px; }
+  .pyramid {
+    display:flex; flex-direction:column-reverse; gap:14px; margin-bottom:30px;
+  }
+  .stage {
+    display:grid; grid-template-columns:64px 1fr auto;
+    gap:18px; align-items:center;
+    background:linear-gradient(180deg, rgba(20,30,46,.55), rgba(14,22,36,.55));
+    border:1px solid rgba(56,189,248,.18);
+    border-radius:8px; padding:18px 22px;
+    transition:border-color .2s, transform .15s;
+  }
+  .stage.active { border-color:rgba(251,191,36,.6); box-shadow:0 0 22px rgba(251,191,36,.2), inset 0 0 16px rgba(251,191,36,.06); }
+  .stage.done { border-color:rgba(34,197,94,.45); }
+  .stage:hover { transform:translateY(-1px); }
+  .stage .icon {
+    width:54px; height:54px;
+    display:flex; align-items:center; justify-content:center;
+    border-radius:50%;
+    background:linear-gradient(135deg, rgba(56,189,248,.18), rgba(56,189,248,.04));
+    border:1px solid rgba(56,189,248,.4);
+    color:var(--cyan);
+    font-size:22px;
+  }
+  .stage.active .icon { background:linear-gradient(135deg, rgba(251,191,36,.25), rgba(251,191,36,.05)); border-color:var(--amber); color:var(--amber); animation:pulse 2.4s ease-in-out infinite; }
+  .stage.done .icon { background:linear-gradient(135deg, rgba(34,197,94,.22), rgba(34,197,94,.05)); border-color:var(--green); color:var(--green); }
+  @keyframes pulse { 0%,100% { box-shadow:0 0 0 rgba(251,191,36,.5); } 50% { box-shadow:0 0 18px rgba(251,191,36,.55); } }
+  .stage .body { flex:1; }
+  .stage .body h3 { font-size:16px; font-weight:600; color:#fff; margin-bottom:4px; }
+  .stage .body p { font-size:13px; color:#94a3b8; margin-bottom:8px; }
+  .stage .progress { width:100%; height:6px; background:rgba(56,189,248,.1); border-radius:3px; overflow:hidden; }
+  .stage .progress .fill { height:100%; background:linear-gradient(90deg, var(--cyan), var(--amber)); transition:width .4s; }
+  .stage.active .progress .fill { background:linear-gradient(90deg, var(--amber), #f97316); box-shadow:0 0 10px rgba(251,191,36,.5); }
+  .stage.done .progress .fill { background:var(--green); }
+  .stage .meta { text-align:right; font-family:'JetBrains Mono',monospace; }
+  .stage .meta .pct { font-size:22px; font-weight:700; color:var(--amber); text-shadow:0 0 6px rgba(251,191,36,.4); }
+  .stage.done .meta .pct { color:var(--green); text-shadow:0 0 6px rgba(34,197,94,.4); }
+  .stage .meta .sub { font-size:11px; color:#94a3b8; letter-spacing:.05em; margin-top:2px; }
+
+  .panel {
+    background:linear-gradient(180deg, rgba(20,30,46,.55), rgba(14,22,36,.55));
+    border:1px solid rgba(56,189,248,.18);
+    border-radius:8px;
+    padding:18px 22px;
+    margin-bottom:20px;
+  }
+  .panel h2 {
+    font-size:14px; font-weight:600; color:#fff; margin-bottom:14px;
+    display:flex; align-items:center; gap:10px;
+  }
+  .panel h2::before { content:''; width:3px; height:18px; background:var(--amber); border-radius:1px; box-shadow:0 0 5px var(--amber); }
+  .add-form {
+    display:grid; grid-template-columns:repeat(5, 1fr) auto; gap:8px; margin-bottom:14px;
+  }
+  @media (max-width: 900px) { .add-form { grid-template-columns:1fr 1fr; } }
+  .inp, select.inp {
+    background:rgba(2,6,12,.7); border:1px solid rgba(56,189,248,.25);
+    color:#fff; font-family:'JetBrains Mono',monospace; font-size:12px;
+    padding:8px 10px; border-radius:3px;
+  }
+  .inp:focus { outline:none; border-color:var(--amber); }
+  .btn {
+    background:linear-gradient(180deg,#1f2738,#141b2a);
+    color:var(--amber); border:1px solid rgba(251,191,36,.4);
+    padding:8px 16px; border-radius:2px;
+    font-family:'JetBrains Mono',monospace; font-size:11px;
+    letter-spacing:.14em; cursor:pointer; text-transform:uppercase;
+    text-shadow:0 0 4px rgba(251,191,36,.4);
+  }
+  .btn.danger { color:var(--red); border-color:rgba(239,68,68,.4); }
+  table { width:100%; border-collapse:collapse; font-family:'JetBrains Mono',monospace; font-size:12px; }
+  table th { text-align:left; padding:8px 10px; color:var(--cyan); font-size:10px; letter-spacing:.14em; text-transform:uppercase; border-bottom:1px solid rgba(56,189,248,.25); }
+  table td { padding:8px 10px; border-bottom:1px solid rgba(56,189,248,.08); }
+  .empty { padding:32px; text-align:center; color:#94a3b8; font-family:'JetBrains Mono',monospace; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a href="index.html" class="back-btn">← BACK TO COCKPIT</a>
+  <span class="topbar-tag">GLARESHIELD</span>
+  <h1>Career Pathway · Training Notebook</h1>
+</div>
+
+<div class="container">
+  <div class="pyramid" id="pyramid"></div>
+
+  <div class="panel">
+    <h2>Log a Training Session</h2>
+    <div class="add-form">
+      <select class="inp" id="trTrack">
+        <option>Private Pilot</option>
+        <option>Instrument</option>
+        <option>Commercial</option>
+        <option>CFI</option>
+        <option>Instructor Experience</option>
+        <option>Type Rating</option>
+        <option>Airline</option>
+        <option>Other</option>
+      </select>
+      <input class="inp" id="trDate" type="date">
+      <input class="inp" id="trTopic" placeholder="Topic (eg. Pattern work)">
+      <input class="inp" id="trHrs" type="number" step="0.1" placeholder="Hours">
+      <input class="inp" id="trNotes" placeholder="Notes">
+      <button class="btn" onclick="addTrain()">+ Add</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Training Sessions</h2>
+    <table>
+      <thead><tr><th>Date</th><th>Track</th><th>Topic</th><th>Hrs</th><th>Notes</th><th></th></tr></thead>
+      <tbody id="trBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+
+const PATHWAY = [
+  { key:'private', label:'Private Pilot',          desc:'Build a solid foundation with quality training.', target:60, icon:'✈' },
+  { key:'instr',   label:'Instrument Rating',      desc:'Master advanced navigation and IFR skills.',       target:50, icon:'☁' },
+  { key:'comm',    label:'Commercial + CFI',       desc:'Earn your Commercial license and CFI credential.', target:140, icon:'🎓' },
+  { key:'cfiexp',  label:'Instructor Experience',  desc:'Build flight hours and teaching expertise.',       target:500, icon:'👥' },
+  { key:'airline', label:'Airline Career',         desc:'Launch your career with the airlines.',            target:1500, icon:'🛫' }
+];
+function getLog(){ return JSON.parse(localStorage.getItem('train_log')||'[]'); }
+function setLog(l){ localStorage.setItem('train_log', JSON.stringify(l)); }
+function hrsFor(key){
+  const log = getLog();
+  const map = {
+    private:'Private Pilot', instr:'Instrument',
+    comm:['Commercial','CFI'], cfiexp:'Instructor Experience',
+    airline:'Airline'
+  };
+  const want = map[key];
+  return log.filter(l => Array.isArray(want) ? want.indexOf(l.track)>=0 : l.track===want)
+            .reduce((a,b) => a + (+b.hrs || 0), 0);
+}
+function renderPyramid(){
+  const stages = PATHWAY.map(p => {
+    const hrs = hrsFor(p.key);
+    const pct = Math.min(100, (hrs/p.target)*100);
+    return Object.assign({}, p, { hrs, pct, done: pct>=100 });
+  });
+  let activeIdx = stages.findIndex(s => !s.done);
+  if (activeIdx < 0) activeIdx = stages.length - 1;
+  $('pyramid').innerHTML = stages.map((s,i) => {
+    const cls = s.done ? 'done' : (i===activeIdx ? 'active' : '');
+    return `<div class="stage ${cls}">
+      <div class="icon">${s.icon}</div>
+      <div class="body">
+        <h3>${s.label}</h3>
+        <p>${s.desc}</p>
+        <div class="progress"><div class="fill" style="width:${s.pct}%"></div></div>
+      </div>
+      <div class="meta">
+        <div class="pct">${Math.round(s.pct)}%</div>
+        <div class="sub">${s.hrs.toFixed(1)} / ${s.target} hrs</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+function renderTable(){
+  const log = getLog();
+  if (log.length === 0) {
+    $('trBody').innerHTML = '<tr><td colspan="6" class="empty">No training sessions logged yet.</td></tr>';
+    return;
+  }
+  $('trBody').innerHTML = log.slice().reverse().map((e,i) => {
+    const idx = log.length-1-i;
+    return `<tr>
+      <td>${e.date}</td>
+      <td>${e.track}</td>
+      <td>${e.topic||'—'}</td>
+      <td>${(+e.hrs||0).toFixed(1)}</td>
+      <td>${(e.notes||'').slice(0,200)}</td>
+      <td><button class="btn danger" onclick="delTrain(${idx})">×</button></td>
+    </tr>`;
+  }).join('');
+}
+function addTrain(){
+  const log = getLog();
+  log.push({
+    date: $('trDate').value || new Date().toISOString().slice(0,10),
+    track: $('trTrack').value,
+    topic: $('trTopic').value,
+    hrs: $('trHrs').value,
+    notes: $('trNotes').value
+  });
+  setLog(log);
+  $('trTopic').value=''; $('trHrs').value=''; $('trNotes').value='';
+  renderPyramid(); renderTable();
+}
+function delTrain(i){ const log = getLog(); log.splice(i,1); setLog(log); renderPyramid(); renderTable(); }
+
+renderPyramid();
+renderTable();
+
+document.addEventListener('keydown', e => { if (e.key === 'Escape') location.href = 'index.html'; });
+</script>
+</body>
+</html>

@@ -5,3 +5,6 @@ node_modules/
 _step*_check.bat
 _step*_log.txt
 _push_log.txt
+
+.vercel
+.env*.local
