@@ -1316,7 +1316,7 @@ function panelWeather(){
         <div class="kp-row"><span class="k">Altimeter</span><span class="v" id="kbWxAlt">${m.altim?m.altim.toFixed(2)+'"':'—'}</span></div>
         <div class="kp-row"><span class="k">Temp/Dew</span><span class="v" id="kbWxTd">${m.temp!=null?Math.round(m.temp*9/5+32)+'/'+Math.round(m.dewp*9/5+32)+'°F':'—'}</span></div>
         <div class="kp-row"><span class="k">Category</span><span class="v" id="kbWxCat"><span class="pill ${cat==='VFR'?'ok':(cat==='MVFR'?'cyan':'fail')}">${cat}</span></span></div>
-        <div class="kp-row"><span class="k">Observed</span><span class="v" id="kbWxAge">${m.obsTime?Math.max(0,Math.round((Date.now()-new Date(m.obsTime).getTime())/60000))+' min ago':'—'}</span></div>
+        <div class="kp-row"><span class="k">Observed</span><span class="v" id="kbWxAge">${m.obsTime?Math.max(0,Math.round((Date.now()-(typeof m.obsTime==="number"?m.obsTime*1000:new Date(m.obsTime).getTime()))/60000))+' min ago':'—'}</span></div>
       </div>
       <div class="kp-card">
         <h4>Raw METAR</h4>
@@ -1353,7 +1353,7 @@ function updateWeatherPanelLive(){
   set('kbWxTd',  m.temp!=null ? Math.round(m.temp*9/5+32)+'/'+Math.round(m.dewp*9/5+32)+'°F' : '—');
   const cat = classifyVFR(m.visib, cig);
   setHTML('kbWxCat', `<span class="pill ${cat==='VFR'?'ok':(cat==='MVFR'?'cyan':'fail')}">${cat}</span>`);
-  set('kbWxAge', m.obsTime ? Math.max(0,Math.round((Date.now()-new Date(m.obsTime).getTime())/60000))+' min ago' : '—');
+  set('kbWxAge', m.obsTime ? Math.max(0,Math.round((Date.now()-(typeof m.obsTime==="number"?m.obsTime*1000:new Date(m.obsTime).getTime()))/60000))+' min ago' : '—');
   set('kbMetarRaw', m.rawOb || '(no data)');
   set('kbTafRaw', _lastTaf || '(no data)');
 }
