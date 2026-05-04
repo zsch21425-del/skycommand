@@ -1413,7 +1413,7 @@ function planeIcon(hdg, sel) {
   const stroke = sel ? '#fff' : '#0ea5e9';
   return L.divIcon({
     className: 'plane-marker',
-    html: `<svg viewBox="0 0 24 24" width="22" height="22" style="transform:rotate(${(hdg||0)-90}deg); transition:transform .3s ease; filter:drop-shadow(0 0 3px ${color})"><path d="M12 2l3 9h7l-5 4 2 7-7-4-7 4 2-7-5-4h7z" fill="${color}" stroke="${stroke}" stroke-width="1.4" stroke-linejoin="round"/></svg>`,
+    html: `<svg viewBox="0 0 24 24" width="22" height="22" style="transform:rotate(${(hdg||0)-90}deg); transition:transform .3s ease; filter:drop-shadow(0 0 3px ${color})"><path d="M12 2 L20 22 L12 18 L4 22 Z" fill="${color}" stroke="${stroke}" stroke-width="1.4" stroke-linejoin="round"/></svg>`,
     iconSize: [22, 22],
     iconAnchor: [11, 11]
   });
@@ -1432,7 +1432,7 @@ function initFlightMap(){
   // Apply dark filter to the map
   setTimeout(() => {
     document.querySelectorAll('#flightMap .leaflet-tile-pane').forEach(pane => {
-      pane.style.filter = 'invert(1) hue-rotate(180deg) saturate(.6) brightness(.8) contrast(1.1)';
+      pane.style.filter = 'invert(1) hue-rotate(180deg) saturate(.6) brightness(1.0) contrast(.85)';
     });
   }, 100);
   // Home marker
